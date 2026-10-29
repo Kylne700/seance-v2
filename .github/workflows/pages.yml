@@ -1,6 +1,6 @@
 name: pages
-# Tests and builds the static site, then deploys it to GitHub Pages. No secrets and no BASE_PATH: the build uses relative paths
-# (vite base './'), so the same dist/ works at any sub-path, and everything in it is public testnet data.
+# Tests and builds the static site, then deploys it to GitHub Pages. No secrets and no BASE_PATH: the base path is fixed to /seance-v2/
+# (`base` in vite.config.ts), the path GitHub Pages gives a repository called seance-v2, and everything in the site is public testnet data.
 # One-time setup: Settings > Pages > Source: GitHub Actions.
 on:
   workflow_dispatch:
