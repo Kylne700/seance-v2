@@ -70,7 +70,7 @@ function reflectMode(): void {
   const file = current?.mode === 'file'
   modeBadge.textContent = file ? 'File' : recorded ? 'Recorded' : 'Live'
   modeBadge.className = `badge ${file ? 'file' : data.mode}`
-  modeText.textContent = file ? 'Showing a file you opened. Nothing was asked of any server for it.' : recorded ? 'Replaying answers saved earlier. This page asks nobody. Press the button again to go back to live data.' : 'Asking the Esmeralda indexer. Every request is listed below.'
+  modeText.textContent = file ? 'Showing a file you opened. Nothing was asked of any server for it.' : recorded ? 'Replaying answers saved earlier. This page does not ask the indexer. Press the button again to go back to live data.' : 'Asking the Esmeralda indexer. The requests this page made are listed below.'
   modeSwitch.setAttribute('aria-pressed', String(recorded))
 }
 
