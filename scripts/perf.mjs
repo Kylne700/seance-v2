@@ -6,6 +6,8 @@
 //   first load   from the start of the navigation until the buttons work and the first example is drawn
 //   lookup       a recent transaction id is pasted (one input event) and "Look at it" is pressed at once; from the press until the answer is shown
 //   #tx= link    the page is opened with the id in its address; from the start of the navigation until the answer is shown
+//   older id     an id that is no longer among the latest 40: version 1 asks for it by id; version 2 downloads the list, stops at "not among the latest",
+//                and asks after a click on "Ask for it anyway" (the click is made the moment the prompt shows, so a person's reading time is left out)
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -45,9 +47,29 @@ async function freshId() {
   throw new Error('the indexer listed no usable transaction')
 }
 
+// An id from deeper in the list (older than the latest 40) that the indexer still holds by id.
+async function olderId() {
+  const items = (await (await fetch(`${INDEXER_URL}/transactions/recent?limit=100`)).json()).transactions
+  for (const item of items.slice(RECENT_LIMIT + 20)) {
+    try {
+      const v = parseTransaction(item)
+      if (v.outcome === 'Commit' && (await fetch(`${INDEXER_URL}/transactions/${v.id}`)).ok) return v.id
+    } catch {
+      /* a shape this page does not read */
+    }
+  }
+  throw new Error('the indexer listed no usable older transaction')
+}
+
 // Page-side conditions.
 const READY = () => document.getElementById('stranger-body')?.getAttribute('aria-busy') === 'false' && !document.getElementById('look')?.hasAttribute('disabled')
 const SHOWN = (id) => document.getElementById('stranger-body')?.getAttribute('aria-busy') === 'false' && (document.getElementById('status')?.textContent ?? '').includes(id.slice(0, 8))
+// The answer is shown, or version 2 has stopped at its prompt.
+const SHOWN_OR_ASKS = (id) => {
+  const ask = document.getElementById('ask')
+  if (ask && !ask.hidden) return 'prompt'
+  return document.getElementById('stranger-body')?.getAttribute('aria-busy') === 'false' && (document.getElementById('status')?.textContent ?? '').includes(id.slice(0, 8)) ? 'shown' : false
+}
 const wait = (page, fn, ...args) => page.waitForFunction(fn, { polling: 'raf', timeout: TIMEOUT }, ...args)
 
 async function inFreshContext(browser, body) {
@@ -85,6 +107,25 @@ const loadAndLookup = (browser, base, id) =>
     return { firstLoad, ...out }
   })
 
+/** An older id pasted at once; version 2 is clicked through its prompt. */
+const olderLookup = (browser, base, id) =>
+  inFreshContext(browser, async (page) => {
+    const cdp = await page.createCDPSession()
+    await page.goto(base, { waitUntil: 'load' })
+    await wait(page, READY)
+    await page.focus('#txid')
+    await cdp.send('Input.insertText', { text: id })
+    await page.evaluate(() => document.getElementById('pick').addEventListener('submit', () => (window.__t0 = performance.now()), { capture: true, once: true }))
+    await page.click('#look')
+    let atPrompt = null
+    if ((await (await wait(page, SHOWN_OR_ASKS, id)).jsonValue()) === 'prompt') {
+      atPrompt = await page.evaluate(() => performance.now() - window.__t0)
+      await page.click('#ask-anyway')
+      await wait(page, SHOWN, id)
+    }
+    return page.evaluate((t) => ({ lookup: performance.now() - window.__t0, atPrompt: t, live: document.getElementById('mode-badge')?.textContent === 'Live' }), atPrompt)
+  })
+
 /** The page opened with the id in its address. */
 const viaLink = (browser, base, id) =>
   inFreshContext(browser, async (page) => {
@@ -113,11 +154,12 @@ const variants = [
 ]
 const servers = await Promise.all(variants.map((v) => serveDir(v.dir, v.port, v.prefix)))
 const browser = await puppeteer.launch({ executablePath: process.env.CHROMIUM ?? '/usr/bin/chromium', headless: true, userDataDir: dir, args: ['--no-sandbox', '--disable-dev-shm-usage'] })
-const seen = Object.fromEntries(variants.map((v) => [v.name, { firstLoad: [], lookup: [], link: [], requests: [], list: [], target: [] }]))
+const seen = Object.fromEntries(variants.map((v) => [v.name, { firstLoad: [], lookup: [], link: [], requests: [], list: [], older: [], olderPrompt: [] }]))
 try {
   for (let round = -1; round < RUNS; round++) {
     // round -1 warms the browser and the connection to the indexer up and is thrown away; the order of the two builds alternates
     const id = await freshId()
+    const old = await olderId()
     for (const v of round % 2 ? [...variants].reverse() : variants) {
       const base = `http://127.0.0.1:${v.port}${v.prefix}`
       const a = await good(() => loadAndLookup(browser, base, id))
@@ -130,8 +172,10 @@ try {
       s.requests.push(a.asked.length)
       const list = a.asked.find((e) => e.list)
       if (list) s.list.push(list.dur)
-      s.target.push(Math.max(...a.asked.filter((e) => !e.list).map((e) => e.start + e.dur))) // when the last by-id answer was in
-      console.error(`${v.name} run ${round + 1}: first load ${Math.round(a.firstLoad)} ms, lookup ${Math.round(a.lookup)} ms (${a.asked.length} indexer requests), #tx= link ${Math.round(b.link)} ms`)
+      const c = await good(() => olderLookup(browser, base, old))
+      s.older.push(c.lookup)
+      if (c.atPrompt !== null) s.olderPrompt.push(c.atPrompt)
+      console.error(`${v.name} run ${round + 1}: first load ${Math.round(a.firstLoad)} ms, lookup ${Math.round(a.lookup)} ms (${a.asked.length} indexer requests), #tx= link ${Math.round(b.link)} ms, older id ${Math.round(c.lookup)} ms${c.atPrompt === null ? '' : ` (prompt at ${Math.round(c.atPrompt)} ms)`}`)
     }
   }
 } finally {
@@ -149,6 +193,8 @@ console.log(`| lookup: press to shown | ${spread(b.lookup)} | ${spread(a.lookup)
 console.log(`| lookup through a #tx= link: open to shown | ${spread(b.link)} | ${spread(a.link)} | ${diff(b.link, a.link)} |`)
 console.log(`| indexer requests in one lookup | ${median(b.requests)} | ${median(a.requests)} | |`)
 if (a.list.length) console.log(`| of which the list of latest transactions took | | ${spread(a.list)} | |`)
+console.log(`| older id (not among the latest 40): press to shown, after the click on "Ask for it anyway" for version 2 | ${spread(b.older)} | ${spread(a.older)} | ${diff(b.older, a.older)} |`)
+if (a.olderPrompt.length) console.log(`| of which press to the prompt, where version 2 waits for the visitor | | ${spread(a.olderPrompt)} | |`)
 console.log('')
 console.log(JSON.stringify({ runs: RUNS, before: b, after: a }))
 process.exit(0)
