@@ -3,12 +3,14 @@ export const INDEXER_URL = 'https://esme-indexer-a.ootle.tari.com'
 export const EXPLORER_URL = 'https://explorer.tari.mw'
 // How long one indexer call may take before the page treats the indexer as down and falls back to recorded data.
 export const INDEXER_TIMEOUT_MS = 8000
-// How many of the latest transactions the "summon" button looks at. One request, never a scan of the chain.
+// How many of the latest transactions the "summon" button looks at, and the lookups take their decoys from. One request, never a scan of the chain.
 export const RECENT_LIMIT = 40
+// The biggest saved transaction file the page will open. One transaction is a few KB.
+export const MAX_FILE_BYTES = 1024 * 1024
 // The explorer reads the same public indexer as this page (esme-indexer-a.ootle.tari.com), so it shows only what that indexer still holds.
 export const explorerTx = (id: string): string => `${EXPLORER_URL}/tx/${id}`
 // Tari's second public indexer. It is a stale mirror (its newest transaction is from 2026-10-21) that still answers for the demo transactions the main one dropped.
-// Links only: this page never calls it, and the CSP lets the page talk to one indexer.
+// Links only: this page never calls it, and the CSP lets the page talk to one indexer (the first).
 export const MIRROR_URL = 'https://esme-indexer-b.ootle.tari.com'
 export const mirrorTx = (id: string): string => `${MIRROR_URL}/transactions/${id}`
 // The first indexer's receipt of a transaction. Receipts are synced from the network's state, not from gossip, so one can outlive the body the indexer dropped. A link only, like mirrorTx.

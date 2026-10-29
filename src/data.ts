@@ -1,13 +1,15 @@
-// Where transactions come from: the live indexer (one request per transaction, never a scan of the chain) or the recorded
-// set in ledger.json. The recorded set is imported as a module, so using it needs no request and works with the network blocked.
+// Where transactions come from: the live indexer (never a scan of the chain), the recorded set in ledger.json, or a file the visitor opens.
+// A lookup asks the indexer in a crowd (crowd.ts), a Summon asks for the list of latest transactions only, and a file asks nobody.
+// The recorded set is imported as a module, so using it needs no request and works with the network blocked.
 import { IndexerClient } from '@tari-project/ootle-indexer'
 import ledger from '../ledger.json'
-import { INDEXER_TIMEOUT_MS, INDEXER_URL, RECENT_LIMIT } from './config.ts'
+import { INDEXER_TIMEOUT_MS, INDEXER_URL, MAX_FILE_BYTES, RECENT_LIMIT } from './config.ts'
 import { isTxId, ParseError, parseTransaction, type TxView } from './chain.ts'
+import { planCrowd, secureInt, type CrowdFacts } from './crowd.ts'
 import type { World } from './poltergeist.ts'
 
 export type Mode = 'live' | 'recorded'
-export type Problem = 'bad-id' | 'not-found' | 'not-recorded' | 'format'
+export type Problem = 'bad-id' | 'not-found' | 'not-recorded' | 'format' | 'no-crowd'
 
 export class LookupError extends Error {
   kind: Problem
@@ -19,8 +21,8 @@ export class LookupError extends Error {
 
 export interface Shown {
   view: TxView
-  /** Where THIS answer came from. */
-  mode: Mode
+  /** Where THIS answer came from: the live indexer, the recording, or a file the visitor opened. */
+  mode: Mode | 'file'
   /** This very call found the indexer unusable and switched the page to recorded data. */
   fellBack: boolean
   /** The indexer is up but answered 404 for a transaction we hold a recording of: it no longer holds it (history dropped, or the testnet was reset). Only THIS answer is the saved copy. The page stays live, and the next call asks the indexer again. */
@@ -31,6 +33,8 @@ export interface Shown {
   ours: boolean
   /** The page's starting example: shown from the recording before anything was asked of the indexer. */
   preview: boolean
+  /** Who the id was asked for with, when the indexer was asked about this id (a lookup, not a Summon). */
+  crowd?: CrowdFacts
 }
 
 const answer = (view: TxView, o: Partial<Shown> = {}): Shown => ({ view, mode: 'live', fellBack: false, forgotten: false, quietChain: false, ours: false, preview: false, ...o })
@@ -109,7 +113,7 @@ const indexerDown = (e: unknown): boolean => {
 
 export function createData(opts: { timeoutMs?: number; pick?: (n: number) => number } = {}) {
   const timeoutMs = opts.timeoutMs ?? INDEXER_TIMEOUT_MS
-  const pick = opts.pick ?? ((n: number) => Math.floor(Math.random() * n))
+  const pick = opts.pick ?? secureInt
   const client = IndexerClient.usingFetchTransport(INDEXER_URL)
   let mode: Mode = 'live'
 
@@ -120,25 +124,49 @@ export function createData(opts: { timeoutMs?: number; pick?: (n: number) => num
       p.then(resolve, reject).finally(() => clearTimeout(timer))
     })
 
+  // The list of latest transactions: one request that is the same for every visitor and every lookup, so it says nothing about which id is wanted.
+  // Summon reads its pick from it, and a lookup takes its decoys from it.
+  const listing = () => within(client.listRecentTransactions({ limit: RECENT_LIMIT, last_id: null, source: null }))
+
   async function lookup(raw: string): Promise<Shown> {
     const id = raw.trim().toLowerCase()
     if (!isTxId(id)) throw new LookupError('bad-id', 'A transaction id is 64 hexadecimal characters (0-9 and a-f).')
     let fellBack = false
     let forgotten = false
+    let crowd: CrowdFacts | undefined
     if (mode === 'live') {
-      try {
-        return answer(parseTransaction(await within(client.getTransaction(id))))
-      } catch (e) {
-        if (e instanceof ParseError) throw new LookupError('format', 'The indexer answered, but this transaction has a shape this page does not know. The explorer can still show it.')
-        const status = (e as { status?: number }).status
-        // A 404 on an id we hold a recording of means the indexer dropped it (or the testnet was reset): that is what the recording is for.
-        // It is no outage, so only this answer comes from the recording. The page stays live, and an id we hold nothing for still gets the indexer's own answer.
-        forgotten = status === 404 && recorded.has(id)
-        if (status === 404 && !forgotten) throw new LookupError('not-found', 'The indexer does not know this transaction id on Esmeralda. The public indexer drops old history, so an old id may be gone.')
-        if (!indexerDown(e) && !forgotten) throw new LookupError('bad-id', 'The indexer did not accept this id.')
-        if (!forgotten) {
+      // If the list cannot be had, nothing about this id has been sent. Never ask for the id alone because of that.
+      const listed = await listing().then(
+        (l): unknown => l.transactions,
+        (e: unknown) => {
+          if (!indexerDown(e)) throw new LookupError('no-crowd', 'The indexer would not give its list of latest transactions, which this page needs to ask about your id among others. Nothing was asked about your id.')
           mode = 'recorded'
           fellBack = true
+          return null
+        },
+      )
+      if (mode === 'live') {
+        const plan = planCrowd(id, listed, pick)
+        crowd = plan.facts
+        // The same call for every id, started in the shuffled order. Only the answer for the id you asked about is used; the rest are not even read.
+        const asks = plan.order.map((x) => client.getTransaction(x))
+        asks.forEach((ask, i) => {
+          if (plan.order[i] !== id) ask.catch(() => {})
+        })
+        try {
+          return answer(parseTransaction(await within(asks[plan.order.indexOf(id)])), { crowd })
+        } catch (e) {
+          if (e instanceof ParseError) throw new LookupError('format', 'The indexer answered, but this transaction has a shape this page does not know. The explorer can still show it.')
+          const status = (e as { status?: number }).status
+          // A 404 on an id we hold a recording of means the indexer dropped it (or the testnet was reset): that is what the recording is for.
+          // It is no outage, so only this answer comes from the recording. The page stays live, and an id we hold nothing for still gets the indexer's own answer.
+          forgotten = status === 404 && recorded.has(id)
+          if (status === 404 && !forgotten) throw new LookupError('not-found', 'The indexer does not know this transaction id on Esmeralda. The public indexer drops old history, so an old id may be gone.')
+          if (!indexerDown(e) && !forgotten) throw new LookupError('bad-id', 'The indexer did not accept this id.')
+          if (!forgotten) {
+            mode = 'recorded'
+            fellBack = true
+          }
         }
       }
     }
@@ -147,7 +175,25 @@ export function createData(opts: { timeoutMs?: number; pick?: (n: number) => num
       // The page switched by itself just now, so the visitor must be told why before being told what recorded mode holds.
       throw new LookupError('not-recorded', fellBack ? 'The indexer did not answer, and this id is not among the recorded transactions (the demos and a small sample). Switch to live data to try again.' : 'Recorded mode only knows the demo transactions and a small sample. Switch to live data to look up any other id.')
     }
-    return answer(parseTransaction(reply), { mode: 'recorded', fellBack, forgotten })
+    return answer(parseTransaction(reply), { mode: 'recorded', fellBack, forgotten, crowd })
+  }
+
+  /** A transaction the visitor saved from an indexer (its answer for one transaction), opened from a file. Asks nobody. */
+  async function fromFile(file: Blob): Promise<Shown> {
+    if (file.size > MAX_FILE_BYTES) throw new LookupError('format', `That file is larger than ${MAX_FILE_BYTES / 1024 / 1024} MB. One transaction is a few KB: open the indexer's answer for a single transaction.`)
+    let json: unknown
+    try {
+      json = JSON.parse(await file.text())
+    } catch {
+      throw new LookupError('format', "That file is not JSON. Open the indexer's answer for one transaction, saved as it came (the README says how).")
+    }
+    try {
+      return answer(parseTransaction(json), { mode: 'file' })
+    } catch (e) {
+      if (!(e instanceof ParseError)) throw e
+      const list = Array.isArray((json as { transactions?: unknown } | null)?.transactions)
+      throw new LookupError('format', list ? "That file is a list of transactions. Open the indexer's answer for a single transaction." : "That file is JSON, but it is not the indexer's answer for one transaction.")
+    }
   }
 
   /** The page's starting example, demo 1, from the recording. It asks nobody, so a dropped id or a blocked network cannot spoil the first screen. */
@@ -161,7 +207,7 @@ export function createData(opts: { timeoutMs?: number; pick?: (n: number) => num
     let fellBack = false
     if (mode === 'live') {
       try {
-        const pool = candidates(withNotes((await within(client.listRecentTransactions({ limit: RECENT_LIMIT, last_id: null, source: null }))).transactions))
+        const pool = candidates(withNotes((await listing()).transactions))
         if (pool.length) {
           const view = pool[pick(pool.length)]
           return answer(view, { ours: ourIds.has(view.id) })
@@ -185,5 +231,6 @@ export function createData(opts: { timeoutMs?: number; pick?: (n: number) => num
     lookup,
     recent,
     example,
+    fromFile,
   }
 }
