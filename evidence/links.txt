@@ -1,4 +1,4 @@
-Links and recorded copies, checked 2026-10-29T19:16:49.244Z
+Links and recorded copies, checked 2026-10-29T19:33:31.438Z
 first indexer https://esme-indexer-a.ootle.tari.com, second indexer https://esme-indexer-b.ootle.tari.com, explorer https://explorer.tari.mw
 FAIL e99ccae24789ef34dbba783c9675f90f89757043a5f456b6d521df6df60ae15b  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
 FAIL e04e6e78021a71bdfa6902674a5401fb64efb54ce948c5c4e5fc287cf6074a7f  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording

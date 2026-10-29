@@ -23,7 +23,8 @@ Built and measured on 2026-10-29 (UTC). This folder is a new git repository: no 
 | base path | 0d4ed90 | `/seance-v2/` for vite, preview and the scripts | smoke runs under it |
 | 6 speed | 53da369, 1378123 | `scripts/perf.mjs`, `notes/perf.md` | section 3 |
 | docs | 2f8fac7, 77ec180, d7b62e3 | README "Private by design" near the top, `design.md`, `docs/checks.md`, `.github/workflows/pages.yml`; dated note about the second indexer | `test/readme.test.ts` |
-| evidence | 5da6f24, 73f97f9, and the last commit (this report) | `evidence/` (smoke.txt, links.txt, screenshots) | |
+| copy fix | 20f8986 | the captions under the Medium and the Auditor say "The key was not sent anywhere." (v1 said "Nothing was sent anywhere.") | smoke |
+| evidence | 5da6f24, 73f97f9, and the last commit (evidence rerun on the final code, and this report) | `evidence/` (smoke.txt, links.txt, screenshots) | |
 
 Tests went from 187 (10 files) in v1 to 236 (11 files).
 
@@ -32,25 +33,26 @@ Choices to know:
 - The latest 40 cover only about 4 minutes of traffic, so most older ids reach the "Ask for it anyway" line. The list is kept 60 s in the page, and the indexer's copy may be 30 s old, so a very fresh id can miss too.
 - A file answer gets the explorer proof link, clears the `#tx=` hash, and says the page cannot tell whether the file is a genuine answer.
 - The log lists "the requests this page has made so far", never "every request". Chromium also reports the browser's own refresh of the saved list, and the log shows it as an extra row without sizes; other browsers: NOT VERIFIED.
-- Late copy fixes (d7b62e3), from my own review: the list row said "Only your IP address and the time", which left out the headers the browser adds, so it now says "Your IP address, the time and the headers your browser adds. No transaction id."; the hint under the id box now says a demo you pick or paste is asked for by id.
+- Late copy fixes, from my own review (d7b62e3, 20f8986): the list row said "Only your IP address and the time", which left out the headers the browser adds, so it now says "Your IP address, the time and the headers your browser adds. No transaction id."; the hint under the id box now says a demo you pick or paste is asked for by id; the captions under the Medium and the Auditor (v1 copy) said "Nothing was sent anywhere.", which beside the log can be read as a claim of zero requests, so they now say "The key was not sent anywhere."
+- A judge model read the page and README text against the list of claims the page must not make (17 items, asked as 15 questions): every claim question came back at 0.034 or lower (not made), except that the old "Nothing was sent anywhere." caption was read as a zero-requests claim at 0.935, which is why it changed. A hint from a model, not a proof.
 
 ## 2. Gates (2026-10-29, real numbers)
 
 | Gate | Result |
 |---|---|
-| `npm ci` | exit 0, added 72 packages in 986 ms, 0 vulnerabilities |
+| `npm ci` | exit 0, added 72 packages in 1 s, 0 vulnerabilities |
 | `npm run typecheck` | exit 0 |
 | `npm test` | 11 files, 236 tests passed |
-| `npm run build` | exit 0; JS 1,891.92 kB (717.80 kB gzip), CSS 12.64 kB (3.65 kB), index.html 14.00 kB (4.20 kB) |
-| `npm run smoke` | PASS: 905 checks ok, 0 FAIL, 232 s, headless Chromium 154 (full run, 19:10 to 19:14 UTC, `evidence/smoke.txt`); a second run of the live scenarios alone also passed (291 ok, 0 FAIL) |
-| `npm run links` | **FAIL (20)**, exit 1, 21 s; see below |
+| `npm run build` | exit 0; JS 1,891.93 kB (717.80 kB gzip), CSS 12.64 kB (3.65 kB), index.html 14.00 kB (4.20 kB) |
+| `npm run smoke` | PASS: 917 checks ok, 0 FAIL, 231 s, headless Chromium 154 (full run on the final code, 19:28 to 19:32 UTC, `evidence/smoke.txt`) |
+| `npm run links` | **FAIL (20)**, exit 1, 20 s, 10 checks ok (19:33 UTC); see below |
 | `npm run scan` | PASS, 31 checks, plain run (the denylist check prints SKIPPED: no file given) |
 | `npm run scan` with `DENYLIST=<tools/privacy-denylist.txt>` | PASS, 31 checks, 0 denylist matches in history, tree, dist and dist wasm |
 | the brief's privacy grep over `git log -p --all` (an absolute home-directory prefix, a gmail address) | 0 matches; the same grep over the tree, tracked and untracked files, finds 0 as well |
 
 **Links gate.** 20 of 20 transaction checks fail with the same cause: the first indexer answers 404 (as the README has said since 2026-10-24, and the gate does not judge that) and the second indexer now answers 404 as well, so there is no live answer to compare the saved copies with. Everything else in the gate passes: the negative control, the demo token's template and token records on both indexers (view key equals the audit key), the explorer's page for the token, and the four repository and footer links. A direct probe the same day: both indexers answer 200 at `/transaction-receipts/<id>` for all 20 ids, and the second indexer's newest transaction is now from 2026-10-28 02:19 UTC (it was 2026-10-21 on 2026-10-24). `scripts/links.mjs` is byte-for-byte the v1 script, so the same 404s would fail it on the v1 tree (not run there: v1 is frozen). Left alone on purpose, because turning it green means choosing what replaces the dead mirror link. The page still offers "Raw answer from a second public indexer" beside a saved copy, and it now opens a 404. Decision for the owner: repoint that link (for example at the first indexer's receipt, which answers) and the gate's comparison, or wait for the mirror. The README carries a dated note about this.
 
-**Smoke.** The full run walks the page at 1280 px and 375 px, live and recorded, offline for the file, and checks the ghost log row by row against the browser's own protocol. In both runs the live chain was quiet, so Summon fell back to the recorded sample and the checks that need a stranger's live transaction (Summon makes one list request and none by id; an id from the list is read from the list) were skipped by design. They ran and passed earlier the same day, in a full run (916 ok, 1 FAIL, a counting error in the test about the browser's own refresh of the list, fixed in the test: it now compares the rows with the protocol exactly) and in a live-only run (302 ok, 0 FAIL), both before the two late wording fixes.
+**Smoke.** The full run walks the page at 1280 px and 375 px, live and recorded, offline for the file, and checks the ghost log row by row against the browser's own protocol. At 19:28 UTC the live chain held a stranger's private transfer, so the checks that need one ran and passed on the final code, at both widths: Summon made one request, for the list, and none for an id; pasting that id found it in the list with no request at all. An earlier full run (19:10 UTC, 905 ok, 0 FAIL, code through d7b62e3) met a quiet chain, so Summon fell back to the recorded sample and those checks were skipped by design; a full run before it had 1 FAIL, a counting error in the test about the browser's own refresh of the list, fixed in the test (it now compares the rows with the protocol exactly).
 
 **Scan.** The "throwaway secrets" check prints SKIPPED: it needs secret folders next to the checkout, and my rules forbid opening them. The generic checks (private key blocks, JWT-style tokens, spend or private secrets assigned a 64-hex value, mnemonic fields, home paths, the account name) pass in history, tree, dist and the wasm. Only the project identity authored the commits.
 
@@ -92,7 +94,7 @@ The limit (more than 400 ms slower at the median: report it, keep the step) is n
 - Row sizes are decoded bodies, not wire bytes, and a row answered from the browser's cache looks like a fresh one.
 - The throwaway-secret scan (SKIPPED, section 2).
 - Comparing the saved copies with a live raw answer: impossible today (section 2). `npm run links` on the v1 tree was not run (v1 is frozen); that it fails the same way is inferred from the identical script.
-- The checks that need a stranger's live transaction did not run in the final runs (quiet chain, section 2); they last ran before the two late wording fixes (d7b62e3).
+- The quiet-chain path (Summon falls back to the recorded sample) last ran in the 19:10 full run (905 ok), before the caption fix (20f8986); the final run (19:28) met a stranger's live transfer.
 - The CSP in browsers other than Chromium; the effect of the policy on a click (it has none) is documented, not tested.
 
 ## 6. After the v2 repository exists
