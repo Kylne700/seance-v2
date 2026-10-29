@@ -17,7 +17,7 @@ describe('the "How this token was made" card', () => {
 
   it('links to the file on GitHub, which is in the repository', () => {
     const file = 'template/src/lib.rs'
-    expect(hrefs).toContain(`https://github.com/Kylne700/seance/blob/main/${file}`)
+    expect(hrefs).toContain(`https://github.com/Kylne700/seance-v2/blob/main/${file}`)
     expect(existsSync(new URL(`../${file}`, import.meta.url))).toBe(true)
   })
 

@@ -17,7 +17,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import puppeteer from 'puppeteer-core'
-import { EXPLORER_URL, INDEXER_URL, LEDGER_URL, MIRROR_URL, explorerTx, mirrorTx, receiptTx } from '../src/config.ts'
+import { EXPLORER_URL, INDEXER_URL, LEDGER_URL, MIRROR_URL, explorerTx, mirrorReceipt, receiptTx } from '../src/config.ts'
 import { amountOf, plural, short, tari } from '../src/format.ts'
 import { serveDir } from './serve.mjs'
 
@@ -63,7 +63,7 @@ const REVEALS = { page: 'Your IP address, the time and which file you asked for.
 // The policy v1 shipped, word for word. v2 adds nothing to it.
 const CSP = "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self'; connect-src https://esme-indexer-a.ootle.tari.com; base-uri 'none'; form-action 'none'"
 const SAMPLE_FILE = join(APP, 'examples/saved-transaction.json') // the file the README offers
-const TEMPLATE_URL = 'https://github.com/Kylne700/seance/blob/main/template/src/lib.rs'
+const TEMPLATE_URL = 'https://github.com/Kylne700/seance-v2/blob/main/template/src/lib.rs'
 const TEMPLATE_LINES = readFileSync(join(APP, 'template/src/lib.rs'), 'utf8').trimEnd().split('\n').length
 // The Poltergeist's numbers, out of the 11 demo payments: [trick, the transparent ledger (synthetic), Tari (recorded, real)]. The same table as test/poltergeist.test.ts.
 const POLT = [['reuse', '11 of 11', '0 of 11'], ['amount', '11 of 11', '1 of 11'], ['timing', '11 of 11', '11 of 11'], ['fee', '11 of 11', '11 of 11'], ['spend', 'Not applicable', '11 of 11']]
@@ -370,10 +370,10 @@ async function tabThrough(page, label) {
   const bad = stops.filter((s) => s.style !== 'solid' || s.width < 2 || !s.onScreen || s.color !== 'rgb(255, 224, 138)')
   check(stops.length >= 10 && bad.length === 0, `${label}: all ${stops.length} Tab stops show the yellow 3 px outline and are on screen`, bad.map((s) => `${s.name} ${s.style} ${s.width} ${s.color} ${s.onScreen}`).join('; '))
   // each name is searched for after the previous one, so the Stranger's link and the Medium's link (the same words) are told apart.
-  // The links follow where the answer came from: live, the explorer; a saved copy, the second indexer's raw answer, the saved ledger, then the first indexer's receipt (only the first goes to the Medium).
+  // The links follow where the answer came from: live, the explorer; a saved copy, the second indexer's receipt, the saved ledger, then the first indexer's receipt (only the first goes to the Medium).
   const copy = await page.evaluate(() => /^Recorded:/.test(document.querySelector('#stranger-body .source')?.textContent ?? ''))
-  const first = copy ? 'a "Raw answer' : 'a "Open in the explorer'
-  const order = ['a "Skip', 'input#txid', 'button#look', 'button#summon', 'button#open-file', 'select#demo', 'button#hold', 'button#mode-switch', 'summary "The requests', first, ...(copy ? ['a "The saved copy', 'a "Receipt'] : []), 'input[key=', 'input#own-key', first, 'input[audit-key=', 'summary "How this token was made', 'a "Tari Ootle explorer', 'a "Tari Ootle docs']
+  const first = copy ? 'a "Receipt from the second' : 'a "Open in the explorer'
+  const order = ['a "Skip', 'input#txid', 'button#look', 'button#summon', 'button#open-file', 'select#demo', 'button#hold', 'button#mode-switch', 'summary "The requests', first, ...(copy ? ['a "The saved copy', 'a "Receipt from the first'] : []), 'input[key=', 'input#own-key', first, 'input[audit-key=', 'summary "How this token was made', 'a "Tari Ootle explorer', 'a "Tari Ootle docs']
   let prev = -1
   const at = order.map((o) => (prev = stops.findIndex((s, k) => k > prev && s.name.startsWith(o))))
   check(at.every((i, k) => i >= 0 && (k === 0 || i > at[k - 1])), `${label}: Tab order follows the page: skip link, id field, buttons (the file button too), mode switch, the ghost log, Stranger's proof links, keys, own key, Medium's proof link, the Auditor's keys, the template card, footer`, order.map((o, k) => `${o}=${at[k]}`).join(' '))
@@ -387,13 +387,13 @@ function expectHeard(s, t, keyName, label) {
 }
 
 // The links beside an answer follow where it came from: a live answer gets the explorer (it reads the same indexer), a saved copy gets the second
-// public indexer's raw answer, the saved ledger and the first indexer's receipt, and never a button to a page that is empty. They all open in a new tab, safely.
+// public indexer's receipt, the saved ledger and the first indexer's receipt, and never a button to a page that is empty. They all open in a new tab, safely.
 function checkLinks(s, id, label) {
   const copy = /^Recorded:/.test(s.source ?? '')
-  const want = copy ? [mirrorTx(id), LEDGER_URL, receiptTx(id)] : [explorerTx(id)]
+  const want = copy ? [mirrorReceipt(id), LEDGER_URL, receiptTx(id)] : [explorerTx(id)]
   const hrefs = s.strangerLinks.map((a) => a.href)
-  check(s.shownId === id && JSON.stringify(hrefs) === JSON.stringify(want) && s.strangerLinks.every((a) => a.target === '_blank' && /noopener/.test(a.rel)), `${label}: the Stranger's links fit ${copy ? 'a saved copy (the second indexer\'s raw answer, ledger.json, the first indexer\'s receipt)' : 'a live answer (the explorer)'} for this very id and open safely`, hrefs.join(' | '))
-  check(s.mediumHref === want[0] && s.mediumTarget === '_blank' && /noopener/.test(s.mediumRel ?? '') && (copy ? /^Raw answer from a second public indexer/ : /^Open in the explorer/).test(s.mediumLink ?? ''), `${label}: the Medium card has its own link for the same id`, `${s.mediumLink} ${s.mediumHref}`)
+  check(s.shownId === id && JSON.stringify(hrefs) === JSON.stringify(want) && s.strangerLinks.every((a) => a.target === '_blank' && /noopener/.test(a.rel)), `${label}: the Stranger's links fit ${copy ? 'a saved copy (the second indexer\'s receipt, ledger.json, the first indexer\'s receipt)' : 'a live answer (the explorer)'} for this very id and open safely`, hrefs.join(' | '))
+  check(s.mediumHref === want[0] && s.mediumTarget === '_blank' && /noopener/.test(s.mediumRel ?? '') && (copy ? /^Receipt from the second public indexer/ : /^Open in the explorer/).test(s.mediumLink ?? ''), `${label}: the Medium card has its own link for the same id`, `${s.mediumLink} ${s.mediumHref}`)
 }
 
 // Chooses a file the way a visitor does: press a button, accept the file chooser. The page reads the file after the input's "change" event, so wait for that first.
@@ -1108,6 +1108,40 @@ async function forgottenRun(browser, w) {
   await page.close()
 }
 
+// The testnet is sometimes quiet: the latest transactions hold no private transfer. Summon must say so, show a transaction of the recorded sample (never one of ours), keep the page
+// live and ask for nothing but the list. The real chain cannot be told to be quiet, so the list is mocked as a valid empty one; test/data.test.ts runs the same case without a browser.
+async function quietRun(browser) {
+  const tag = 'a quiet chain (the latest transactions hold no private transfer)'
+  const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' }
+  const other = [] // anything asked of the indexer that is not the list
+  let lists = 0
+  const intercept = (r) => {
+    const u = new URL(r.url())
+    if (u.host !== INDEXER_HOST) return void r.continue()
+    if (r.method() === 'OPTIONS') return void r.respond({ status: 204, headers: cors })
+    if (u.pathname === '/transactions/recent') {
+      lists++
+      return void r.respond({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ transactions: [] }) })
+    }
+    other.push(u.pathname)
+    void r.respond({ status: 404, headers: cors, contentType: 'application/json', body: JSON.stringify({ error: 'not known to this indexer' }) })
+  }
+  const { page, log } = await open(browser, { w: 1280, intercept })
+  await page.click('#summon')
+  await settled(page)
+  await scrollSettled(page)
+  const s = await snap(page)
+  const sample = ledger.recent.transactions.map((t) => t.transaction_id)
+  check(s.badge === 'Live' && s.pressed === 'false' && /^Recorded:/.test(s.source ?? '') && sample.includes(s.shownId) && !OURS.has(s.shownId), `${tag}: Summon shows a transaction of the recorded sample, labelled "Recorded", never one of ours, and the page stays live`, `${s.badge} ${s.pressed} | ${(s.source ?? '').slice(0, 50)} | ${String(s.shownId).slice(0, 8)}`)
+  check(/^The latest live transactions held no private transfer, so this one is recorded\./.test(s.status) && /warn/.test(s.statusClass) && !s.ask, `${tag}: the status line says so, as a warning`, `${s.statusClass}: ${s.status.slice(0, 90)}`)
+  check(lists === 1 && other.length === 0, `${tag}: one request, for the list, and none for an id`, `${lists} list, ${other.length} other`)
+  checkLinks(s, s.shownId, tag)
+  await netlogChecks(page, log, tag)
+  const csp = await cspSeen(page, log)
+  check(csp.length === 0 && log.pageErrors.length === 0 && consoleBad(log).length === 0, `${tag}: 0 Content Security Policy violations, no page error, no console error`, csp.concat(log.pageErrors, consoleBad(log).map((m) => m.text)).slice(0, 2).join(' | '))
+  await page.close()
+}
+
 // ---------- a transaction opened from a saved file ----------
 // The offline seance. The visitor saves the indexer's answer for one transaction once (the README says how) and opens it later. From the moment the file is chosen the
 // browser is told it is offline (that cuts this page's own server too), and all three ghosts must still read it: no request, no failed request, and a ghost log that says 0.
@@ -1451,7 +1485,7 @@ function staticChecks() {
   check(!/<script(?![^>]*\bsrc=)/i.test(html) && !/\sstyle=/i.test(html), 'build: no inline script or style in index.html')
   check(!existsSync(join(DIST, 'gate.html')) && existsSync(join(DIST, 'THIRD-PARTY-LICENSES.md')) && existsSync(join(DIST, 'favicon.svg')), 'build: no gate page shipped; third-party licence notices and favicon are')
   // Hosts the page may name: the indexer (the only one it contacts: the CSP allows nothing else), and links a visitor can click: the explorer, ootle.tari.com, the second
-  // public indexer (raw answers of saved copies), GitHub and raw.githubusercontent.com (the template, the saved ledger). The last two are the SVG namespace and the preview tags.
+  // public indexer (receipts of saved copies), GitHub and raw.githubusercontent.com (the template, the saved ledger). The last two are the SVG namespace and the preview tags.
   // The recording's own `indexer` field names where it was taken from: recorded data, kept as it was, and never contacted.
   const allowed = new Set([INDEXER_HOST, new URL(EXPLORER_URL).host, 'ootle.tari.com', new URL(MIRROR_URL).host, 'github.com', new URL(LEDGER_URL).host, 'www.w3.org', new URL(PUBLIC_URL).host, new URL(ledger.indexer).host])
   const found = new Map()
@@ -1513,6 +1547,8 @@ try {
   await scenario('hang', () => hangRun(online))
   section('the indexer forgot a demo (mocked: it answers 404 to all but one)')
   for (const w of [1280, 375]) await scenario(`forgotten ${w}`, () => forgottenRun(online, w))
+  section('a quiet chain (mocked: the list holds no private transfer, so Summon falls back to the recorded sample)')
+  await scenario('quiet chain', () => quietRun(online))
   section('a transaction opened from a saved file (no network at all from the moment the file is chosen)')
   for (const w of [1280, 375]) await scenario(`file ${w}`, () => fileRun(offline, w))
   await scenario('uppercase link', () => hashRun(offline))

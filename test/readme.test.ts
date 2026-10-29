@@ -2,14 +2,14 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import ledger from '../ledger.json'
-import { MIRROR_URL, receiptTx } from '../src/config.ts'
+import { MIRROR_URL, mirrorReceipt, receiptTx } from '../src/config.ts'
 import template from '../template/src/lib.rs?raw'
 
 const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8')
 const entries = [...ledger.txs, ...ledger.hero, ...ledger.setup]
 
 describe('the transaction links', () => {
-  const linked = [...readme.matchAll(new RegExp(`\\(${MIRROR_URL.replaceAll('.', '\\.')}/transactions/([0-9a-f]{64})\\)`, 'g'))].map((m) => m[1])
+  const linked = [...readme.matchAll(new RegExp(`\\(${MIRROR_URL.replaceAll('.', '\\.')}/transaction-receipts/([0-9a-f]{64})\\)`, 'g'))].map((m) => m[1])
 
   it('are one per transaction in the ledger: the 15 demos and the 3 set-up steps', () => {
     expect(entries).toHaveLength(18)
@@ -17,8 +17,16 @@ describe('the transaction links', () => {
     expect([...linked].sort()).toEqual(entries.map((e) => e.id).sort())
   })
 
-  it("link demo 1's receipt on the first indexer, the same address the saved-copy card links", () => {
+  it("are the second indexer's receipts, the same address the saved-copy card links first", () => {
+    expect(readme).toContain(`(${mirrorReceipt(ledger.hero[0].id)})`)
+  })
+
+  it("link demo 1's receipt on the first indexer, the same address the saved-copy card links last", () => {
     expect(readme).toContain(`(${receiptTx(ledger.hero[0].id)})`)
+  })
+
+  it('no longer link the second indexer for a whole transaction, which it answers 404 since 2026-10-29', () => {
+    expect(readme).not.toContain(`${MIRROR_URL}/transactions/`)
   })
 
   it('no longer point at explorer pages, which the public indexer cannot fill any more', () => {
