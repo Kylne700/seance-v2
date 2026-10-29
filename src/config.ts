@@ -11,7 +11,7 @@ export const LIST_KEPT_MS = 60_000
 export const MAX_FILE_BYTES = 1024 * 1024
 // The explorer reads the same public indexer as this page (esme-indexer-a.ootle.tari.com), so it shows only what that indexer still holds.
 export const explorerTx = (id: string): string => `${EXPLORER_URL}/tx/${id}`
-// Tari's second public indexer. It is a stale mirror (its newest transaction is from 2026-10-21) that still answers for the demo transactions the main one dropped.
+// Tari's second public indexer. On 2026-10-24 it was a stale mirror (newest transaction 2026-10-21) that still answered for the demo transactions the main one dropped; on 2026-10-29 it answers 404 for them (README, dated note).
 // Links only: this page never calls it, and the CSP lets the page talk to one indexer (the first).
 export const MIRROR_URL = 'https://esme-indexer-b.ootle.tari.com'
 export const mirrorTx = (id: string): string => `${MIRROR_URL}/transactions/${id}`
