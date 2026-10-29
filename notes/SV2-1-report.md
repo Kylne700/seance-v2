@@ -74,6 +74,7 @@ The limit (more than 400 ms slower at the median: report it, keep the step) is n
 - For a Summon, or a lookup of an id that is not a demo (the page keeps the list for a minute, so usually no more than one such request a minute; a failed list is not kept): your IP address, the time, and the headers your browser adds (its name and language, for example), in the request `GET /transactions/recent?limit=40`. That request is the same for everyone and names no id; the page looks for your id inside the answer, in your browser.
 - Your id, in its own request: when you press "Ask for it anyway" (for an id you typed, pasted or opened by a `#tx=` link that the list did not hold), and for a demo you pick, paste or open by link. A VPN or Tor changes the IP address the indexer sees, not the id.
 - The page does not claim that an id is never sent, that the IP address or the time is hidden, or that a lookup is anonymous.
+- Clicking the receipt link beside a saved copy sends that id to this same indexer.
 - Opening a saved file asks nobody (checked in Chromium by cutting the network).
 - What the indexer or Cloudflare keep or log: NOT VERIFIED.
 
