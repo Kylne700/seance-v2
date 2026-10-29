@@ -67,7 +67,7 @@ export interface Summary {
 // What the host at the other end learns from one request. The browser adds its own headers (such as the language and the browser's name), which the page cannot see.
 const REVEALS: Record<Kind, string> = {
   page: 'Your IP address, the time and which file you asked for.',
-  list: 'Only your IP address and the time. No transaction id.',
+  list: 'Your IP address, the time and the headers your browser adds. No transaction id.',
   transaction: 'Your IP address, the time and this id.',
   other: 'Your IP address, the time and what you asked for.',
 }

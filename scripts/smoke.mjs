@@ -59,7 +59,7 @@ const FILE_SOURCE = 'From your file: nothing was asked of any server. This page 
 const FILE_BADGE_TEXT = 'Showing a file you opened. Nothing was asked of any server for it.'
 const ASK_BUTTONS = 'Ask for it anyway|Open a saved transaction file'
 // What the ghost log says each kind of request lets the other end learn.
-const REVEALS = { page: 'Your IP address, the time and which file you asked for.', list: 'Only your IP address and the time. No transaction id.', transaction: 'Your IP address, the time and this id.' }
+const REVEALS = { page: 'Your IP address, the time and which file you asked for.', list: 'Your IP address, the time and the headers your browser adds. No transaction id.', transaction: 'Your IP address, the time and this id.' }
 // The policy v1 shipped, word for word. v2 adds nothing to it.
 const CSP = "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self'; connect-src https://esme-indexer-a.ootle.tari.com; base-uri 'none'; form-action 'none'"
 const SAMPLE_FILE = join(APP, 'examples/saved-transaction.json') // the file the README offers

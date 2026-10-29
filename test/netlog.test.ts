@@ -222,7 +222,7 @@ describe('what a request is called', () => {
     const f = log.wrap(echo())
     await f(`https://${INDEXER}/transactions/recent?limit=40`)
     await f(`https://${INDEXER}/transactions/${idN(1)}`)
-    expect(log.entries()[0].reveals).toBe('Only your IP address and the time. No transaction id.')
+    expect(log.entries()[0].reveals).toBe('Your IP address, the time and the headers your browser adds. No transaction id.')
     expect(log.entries()[1].reveals).toBe('Your IP address, the time and this id.')
   })
 

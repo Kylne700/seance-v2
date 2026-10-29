@@ -8,7 +8,7 @@ How it was measured
 - Every request was recorded with the DevTools Network domain, which also shows the browser's own requests (the tab icon).
 - Scenarios: first load, Summon, paste an id and Look at it, Hold the seance, recorded mode, and a link that carries `#tx=<id>`.
 - Static check: every host named in the built files (the same scan `npm run smoke` makes).
-- Indexer hostnames: `esme-indexer-a.ootle.tari.com` is what the page and the explorer use. `ootle-indexer-a.tari.com` and the two `-b` names are aliases of the same backends (same answers, same sizes on 2026-10-29). The page contacts only the first one.
+- Indexer hostnames: `esme-indexer-a.ootle.tari.com` is what the page and the explorer use. `ootle-indexer-a.tari.com` is an alias of it, and `ootle-indexer-b.tari.com` of `esme-indexer-b.ootle.tari.com`, the second public indexer, which is a different backend (on 2026-10-29 each alias returned the same newest transaction as its twin; the two backends returned different ones). The page contacts only the first one.
 
 ## 1. Requests the page makes by itself
 
