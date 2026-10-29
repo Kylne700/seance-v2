@@ -1,0 +1,15 @@
+Template scan (counts only; every count must be 0)
+file: seance_auditor_token.wasm, 144761 bytes, sha256 e6d3cd6db1da7666...
+built: 2026-10-18T19:00:51Z, with RUSTFLAGS=--remap-path-prefix=$HOME=/build
+the private word list holds 5 entries (not printed)
+ok   the throwaway wallet's secret values (3 checked): 0
+ok   the throwaway wallet's seed-phrase runs of 3 words (22 checked): 0
+ok   private-key blocks, tokens and secret assignments: 0
+ok   the home folder path: 0
+ok   the account name: 0
+ok   the private word list (case-insensitive): 0
+ok   a home-folder prefix of any user (the Linux form): 0
+ok   negative control: a secret value, a seed-phrase run and a key block planted in a copy of these bytes are all noticed by the same counters (1 / 1 / 1 found; each must be 1 or more)
+The secret values are read in code from the throwaway wallet folders with the rules of scripts/scan.mjs; only counts are printed.
+RESULT: PASS
+NOT VERIFIED: that this file is byte-for-byte the template that was published (it is the file that was built just before the publish, and it was not rebuilt after).

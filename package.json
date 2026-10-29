@@ -1,0 +1,38 @@
+{
+  "name": "seance",
+  "version": "0.1.0",
+  "description": "Three ghosts read one private Tari transaction in the browser: the Stranger (no key), the Medium (view key) and the Auditor (token audit key). A fourth, the Poltergeist, tries to link payments from public data.",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": "^22.18.0 || ^24.0.0"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5273 --strictPort",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4273 --strictPort",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "stranger": "node scripts/stranger.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "links": "node scripts/links.mjs",
+    "scan": "node scripts/scan.mjs",
+    "licenses": "node scripts/licenses.mjs",
+    "demo": "node scripts/make-demo.mjs"
+  },
+  "dependencies": {
+    "@tari-project/ootle": "0.9.0",
+    "@tari-project/ootle-indexer": "0.9.0",
+    "@tari-project/ootle-wasm": "0.46.1"
+  },
+  "devDependencies": {
+    "@tari-project/ootle-secret-key-wallet": "0.9.0",
+    "@types/node": "26.6.5",
+    "axe-core": "4.14.0",
+    "puppeteer-core": "25.14.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
+    "vitest": "5.0.5"
+  }
+}

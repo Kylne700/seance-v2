@@ -1,0 +1,20 @@
+[package]
+name = "seance_auditor_token"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "A stealth token whose every output can be read (the amount only) by one auditor view key. Testnet demo for Seance."
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+tari_template_lib = "0.34.0"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

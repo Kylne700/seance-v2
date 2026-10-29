@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.log
+.env
+.env.*
+.keys/
+.walletd/
+.l1/
+tmp/
+template/target/
