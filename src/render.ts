@@ -255,7 +255,7 @@ export function renderReading(el: HTMLElement, hearing: Hearing): void {
         )
       }
       const shut = all.length - readings.length
-      el.append(caption(`Read inside this page with ${who}. Nothing was sent anywhere.${shut > 0 ? ` ${theOther(shut, 'sealed note', 'stays', 'stay')} shut for this key.` : ''}`))
+      el.append(caption(`Read inside this page with ${who}. The key was not sent anywhere.${shut > 0 ? ` ${theOther(shut, 'sealed note', 'stays', 'stay')} shut for this key.` : ''}`))
       break
     }
   }
@@ -304,7 +304,7 @@ export function renderAudit(el: HTMLElement, a: Audit): void {
         )
       }
       const bare = all.length - heard.length
-      el.append(caption(`Counted inside this page with ${who}. Nothing was sent anywhere. The search covers 0 to ${amountOf(heard[0].output.resource, RANGE_MAX)}.${bare > 0 ? ` ${theOther(bare, 'sealed note', 'carries', 'carry')} no proof for this key.` : ''}`))
+      el.append(caption(`Counted inside this page with ${who}. The key was not sent anywhere. The search covers 0 to ${amountOf(heard[0].output.resource, RANGE_MAX)}.${bare > 0 ? ` ${theOther(bare, 'sealed note', 'carries', 'carry')} no proof for this key.` : ''}`))
       break
     }
   }

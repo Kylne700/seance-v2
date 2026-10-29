@@ -597,7 +597,7 @@ async function walk(browser, { mode, w }) {
   leaksChecks(s, tx(1), `${tag} demo ${demoNo(tx(1))}`)
   check(s.auditEmpty?.startsWith(AUDIT_NO_PROOF) && s.auditReadings.length === 0, `${tag}: a demo without an audit key leaves the Auditor nothing to count, and it says why`, s.auditEmpty ?? '')
   check(!s.strangerText.includes(tx(1).memo) && !s.strangerText.includes(tari(tx(1).amount)), `${tag}: the Stranger's card shows neither the memo nor the amount`)
-  check(/Read inside this page with Bob's key\. Nothing was sent anywhere\./.test(s.readingText), `${tag}: the Medium says it listened locally`)
+  check(/Read inside this page with Bob's key\. The key was not sent anywhere\./.test(s.readingText), `${tag}: the Medium says it listened locally`)
   check(inView(s), `${tag}: after "Hold the seance" the answer is on screen without scrolling by hand`, `top ${s.strangerTop}px of ${H}px`)
   if (live) liveBodies.set(`${w}:${tx(1).id}`, s.strangerBody)
   else if (liveBodies.has(`${w}:${tx(1).id}`)) check(liveBodies.get(`${w}:${tx(1).id}`) === s.strangerBody, `${tag}: the Stranger's card for demo ${demoNo(tx(1))} is word for word the same as in the live run`)
