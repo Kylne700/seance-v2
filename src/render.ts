@@ -7,6 +7,7 @@ import type { Reading } from './decrypt.ts'
 import { clear, h } from './dom.ts'
 import { amountOf, baseUnits, outcomeLabel, plural, short, tari, theOther, when } from './format.ts'
 import { leaks, paysFee, type Leak } from './leaks.ts'
+import type { Entry } from './netlog.ts'
 import { notes, summary, TRICKS, type Report, type Score, type TrickId } from './poltergeist.ts'
 
 const MAX_NOTES = 6 // a transaction with more sealed notes than this is cut here, and says so
@@ -41,16 +42,18 @@ export const outLink = (href: string, text: string, cls = 'btn ghost'): HTMLElem
 /**
  * The links beside an answer, so a visitor can check it without trusting this page. The explorer reads the same indexer as the page, so it only helps while
  * that indexer holds the transaction. A recorded answer points at the raw answer of Tari's second public indexer, at the recording itself and, last, at the first
- * indexer's receipt. The Medium card shows only the first link, so a new link goes at the end.
+ * indexer's receipt. The Medium card shows only the first link, so a new link goes at the end. A file the visitor opened gets the explorer link too: opening it is their own step.
  */
 export function proofLinks(s: Shown): HTMLElement[] {
-  return s.mode === 'live'
+  return s.mode !== 'recorded'
     ? [outLink(explorerTx(s.view.id), 'Open in the explorer')]
     : [outLink(mirrorTx(s.view.id), 'Raw answer from a second public indexer'), outLink(LEDGER_URL, 'The saved copy (ledger.json)'), outLink(receiptTx(s.view.id), 'Receipt from the first public indexer')]
 }
 
 /** The one line that says where the Stranger's answer came from. */
 function sourceLine(s: Shown): string {
+  if (s.mode === 'file') return 'From your file: nothing was asked of any server. This page cannot tell whether the file is a genuine answer from an indexer.'
+  if (s.list) return s.list.found ? `Live: found in the indexer's latest ${plural(s.list.size, 'transaction')}, so the indexer was not asked for this id.` : `Live: picked in your browser from the indexer's latest ${plural(s.list.size, 'transaction')}. The indexer was not asked for this id.`
   if (s.mode === 'live') return 'Live: read from the indexer just now.'
   if (s.preview) return `Recorded: the page's starting example, a copy saved on ${savedOn}. Nothing was asked of the indexer.`
   if (s.forgotten) return `Recorded: the public indexer no longer holds this transaction, so this is the copy saved on ${savedOn}.`
@@ -127,6 +130,32 @@ export function renderStranger(body: HTMLElement, s: Shown): void {
     h('div', { class: 'actions' }, ...proofLinks(s)),
     ...v.statements.map((st, n) => statement(st, n, v.feePaid)),
     ...(v.statements.length === 0 ? [h('p', { class: 'empty' }, 'This transaction has no private transfer, so nothing in it is sealed.')] : []),
+  )
+}
+
+const sizeOf = (n: number | null): string => (n === null ? 'unknown' : n < 1024 ? `${n} bytes` : `${(n / 1024).toFixed(1)} KB`)
+const statusOf = (e: Entry): string => (e.status === null ? 'waiting' : e.status === 0 ? 'failed' : String(e.status))
+
+/** The ghost log's table: a row for each request, in the order they started. */
+export function renderNetRows(body: HTMLElement, rows: readonly Entry[]): void {
+  const cell = (...kids: (Node | string | null)[]): HTMLElement => h('td', null, ...kids)
+  body.replaceChildren(
+    ...[...rows]
+      .sort((a, b) => a.at - b.at)
+      .map((e, i) =>
+        h(
+          'tr',
+          e.warn ? { class: 'warn' } : null,
+          cell(String(i + 1)),
+          cell(`${(e.at / 1000).toFixed(2)} s`),
+          cell(h('code', null, e.host)),
+          cell(h('code', null, e.path)),
+          cell(sizeOf(e.out)),
+          cell(sizeOf(e.in)),
+          cell(statusOf(e)),
+          cell(e.reveals, e.warn ? h('strong', null, ` Warning: ${e.warn}.`) : null),
+        ),
+      ),
   )
 }
 

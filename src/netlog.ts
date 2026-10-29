@@ -174,6 +174,7 @@ export function createNetlog(o: Options) {
       return (input, init) => {
         const raw = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
         const url = parse(raw)
+        if (url && url.protocol !== 'http:' && url.protocol !== 'https:') return real(input, init) // a data: or blob: address never leaves the browser, so it is no request
         const request = typeof input === 'object' && 'method' in input ? input : null
         const method = (init?.method ?? request?.method ?? 'GET').toUpperCase()
         const body = init?.body

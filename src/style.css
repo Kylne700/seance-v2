@@ -44,6 +44,7 @@ code { font-family: var(--mono); }
 .skip { position: absolute; left: 8px; top: -80px; background: var(--amber); color: var(--amber-ink); padding: 12px 16px; border-radius: 8px; z-index: 10; min-height: 44px; font-weight: 700; }
 .skip:focus { top: 8px; }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+[hidden] { display: none !important; } /* a class that sets display (.row) would otherwise win over the hidden attribute */
 
 /* Hero */
 .hero { padding: 40px 0 8px; }
@@ -94,6 +95,7 @@ input[type='text']:focus-visible, select:focus-visible { border-color: var(--foc
 .badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: .8125rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; border: 1px solid transparent; }
 .badge.live { background: #12332a; color: var(--mint); border-color: #276654; }
 .badge.recorded { background: #3a2a10; color: var(--amber); border-color: #7a5520; }
+.badge.file { background: #231d3d; color: var(--violet); border-color: #5b4d92; }
 
 .status { margin: 12px 0 0; min-height: 1.6em; color: var(--muted); }
 .status.warn { color: var(--amber); }
@@ -122,6 +124,7 @@ input[type='text']:focus-visible, select:focus-visible { border-color: var(--foc
 .source { font-size: .875rem; font-weight: 700; margin-bottom: 12px; }
 .source.live { color: var(--mint); }
 .source.recorded { color: var(--amber); }
+.source.file { color: var(--violet); }
 
 .facts { margin: 0 0 12px; }
 .fact { padding: 8px 0; border-top: 1px solid var(--line); }
@@ -158,6 +161,20 @@ summary .peek { font-family: var(--mono); font-size: .8125rem; color: var(--mute
 
 .veiled { display: flex; align-items: center; gap: 10px; margin: 10px 0 0; color: var(--muted); font-size: .875rem; }
 .bar { flex: none; width: 56px; height: 12px; border-radius: 6px; background: repeating-linear-gradient(135deg, #5a4f82 0 6px, #3d3558 6px 12px); }
+
+/* The ghost log */
+.netlog { margin-bottom: 40px; }
+.net-head { max-width: 46rem; margin: 0 0 8px; font: 600 1.25rem/1.4 var(--serif); }
+.net-head.leak { color: var(--rose); }
+.net-file { max-width: 46rem; margin: 0 0 8px; color: var(--mint); font-weight: 700; }
+.netlog .note { margin-top: 8px; }
+.table-wrap { overflow-x: auto; margin: 4px 0 12px; border: 1px solid var(--line); border-radius: 10px; }
+table.net { border-collapse: collapse; width: 100%; min-width: 48rem; font-size: .875rem; }
+.net th, .net td { text-align: left; vertical-align: top; padding: 8px 10px; border-top: 1px solid var(--line); }
+.net thead th { border-top: 0; color: var(--violet); font-size: .8125rem; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.net td:nth-child(-n+2), .net td:nth-child(n+5):nth-child(-n+7) { white-space: nowrap; }
+.net code { font-size: .8125rem; overflow-wrap: anywhere; }
+.net tr.warn td { color: var(--rose); }
 
 /* What still leaks */
 .leaks { margin-bottom: 48px; }

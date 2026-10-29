@@ -172,6 +172,15 @@ describe('the fetch wrapper', () => {
     for (const e of [post, body, put]) expect(e.warn).toContain('sends data')
   })
 
+  it('a data: or blob: address is no request: the answer comes back and nothing is written down', async () => {
+    const log = newLog()
+    const f = log.wrap(echo('inline'))
+    expect(await (await f('data:text/plain;base64,aGk=')).text()).toBe('inline')
+    await f('blob:https://example.test/0f0f')
+    expect(log.entries()).toEqual([])
+    expect(log.summary()).toMatchObject({ requests: 0, hosts: 0 })
+  })
+
   it('takes a URL object or a Request as well as a string', async () => {
     const log = newLog()
     const f = log.wrap(echo())

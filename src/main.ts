@@ -1,12 +1,14 @@
 import { audit, audited } from './auditor.ts'
 import { txFromHash } from './chain.ts'
+import { INDEXER_URL } from './config.ts'
 import { createData, demoKeys, demos, LookupError, recordedWorld, savedOn, type Demo, type Shown } from './data.ts'
 import { listen, viewSecretProblem } from './decrypt.ts'
 import { clear, h } from './dom.ts'
 import { outcomeLabel, plural, short } from './format.ts'
+import { createNetlog } from './netlog.ts'
 import { poltergeist } from './poltergeist.ts'
 import templateSource from '../template/src/lib.rs?raw'
-import { proofLinks, renderAudit, renderLeaks, renderPoltergeist, renderReading, renderStranger, renderStrangerEmpty, showTally, type Hearing } from './render.ts'
+import { proofLinks, renderAudit, renderLeaks, renderNetRows, renderPoltergeist, renderReading, renderStranger, renderStrangerEmpty, showTally, type Hearing } from './render.ts'
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T => {
   const el = document.getElementById(id)
@@ -29,12 +31,26 @@ const mediumActions = $('medium-actions')
 const modeBadge = $('mode-badge')
 const modeText = $('mode-text')
 const modeSwitch = $('mode-switch')
-const buttons = [$('summon'), $('hold'), $('look')]
+const buttons = [$('summon'), $('open-file'), $('hold'), $('look')]
+const fileInput = $<HTMLInputElement>('file')
+const ask = $('ask')
+const netHead = $('net-head')
+const netFile = $('net-file')
+const netRows = $('net-rows')
 
 const oneColumn = window.matchMedia('(max-width: 959px)') // keep in step with style.css
 const calm = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+// The ghost log is set up before anything can ask the network. It wraps `fetch` for the whole page, and the browser's own list of loaded files feeds it too.
+const netlog = createNetlog({ siteHost: location.host, indexerHost: new URL(INDEXER_URL).host })
+globalThis.fetch = netlog.wrap(globalThis.fetch.bind(globalThis))
+for (const type of ['navigation', 'resource']) new PerformanceObserver((list) => list.getEntries().forEach((e) => netlog.seen(e as PerformanceResourceTiming))).observe({ type, buffered: true })
+for (const k of Object.values(demoKeys)) netlog.watch(k.viewSecret)
+
 const data = createData()
 let current: Shown | null = null
+let fileMark = 0 // when the file now on the table was opened, on the log's clock
+let pending = '' // the id the visitor was just told is not in the list
 let busy = false
 let loadSeq = 0 // answers that arrive after a newer request are dropped
 let hearSeq = 0
@@ -51,11 +67,22 @@ function setStatus(text: string, kind: 'info' | 'warn' | 'error' = 'info'): void
 
 function reflectMode(): void {
   const recorded = data.mode === 'recorded'
-  modeBadge.textContent = recorded ? 'Recorded' : 'Live'
-  modeBadge.className = `badge ${data.mode}`
-  modeText.textContent = recorded ? 'Replaying answers saved earlier. This page asks nobody. Press the button again to go back to live data.' : 'Asking the Esmeralda indexer for one transaction at a time.'
+  const file = current?.mode === 'file'
+  modeBadge.textContent = file ? 'File' : recorded ? 'Recorded' : 'Live'
+  modeBadge.className = `badge ${file ? 'file' : data.mode}`
+  modeText.textContent = file ? 'Showing a file you opened. Nothing was asked of any server for it.' : recorded ? 'Replaying answers saved earlier. This page asks nobody. Press the button again to go back to live data.' : 'Asking the Esmeralda indexer. Every request is listed below.'
   modeSwitch.setAttribute('aria-pressed', String(recorded))
 }
+
+// The ghost log's panel. Only its text and rows are redrawn, so the open or closed state of the list is left alone.
+function renderNet(): void {
+  netHead.textContent = netlog.headline()
+  netHead.className = netlog.summary().leaked ? 'net-head leak' : 'net-head'
+  renderNetRows(netRows, netlog.entries())
+  netFile.hidden = current?.mode !== 'file'
+  netFile.textContent = current?.mode === 'file' ? `Since you opened your file: ${plural(netlog.since(fileMark), 'request')}.` : ''
+}
+netlog.subscribe(renderNet)
 
 function setBusy(on: boolean): void {
   busy = on
@@ -67,6 +94,7 @@ function setBusy(on: boolean): void {
 function chosenKey(): { secret: string; who: string } | { problem: string } | null {
   const own = ownKey.value.trim().toLowerCase()
   if (own) {
+    netlog.watch(own) // a pasted key is watched like the demo keys: if it ever turns up in a request, the log says so
     const problem = viewSecretProblem(own)
     return problem ? { problem } : { secret: own, who: 'your key' }
   }
@@ -116,13 +144,16 @@ function checkRadio(group: 'key' | 'audit-key', value: string | null): void {
 
 function describe(s: Shown): string {
   const what = `Showing transaction ${short(s.view.id, 8)} (${outcomeLabel(s.view)}).`
+  if (s.mode === 'file') return `Opened from your file. Nothing was asked of any server, and this page cannot tell whether the file is a genuine answer from an indexer. ${what}`
   if (s.ours) return `Nobody else's private transfer was among the latest transactions, so this is one of the demos we made for this page. ${what}`
   if (s.fellBack) return `The indexer did not answer, so the page switched to recorded data. ${what}`
   if (s.quietChain) return `The latest live transactions held no private transfer, so this one is recorded. ${what}`
   const kind = demos.find((d) => d.id === s.view.id)?.kind
   const about = kind === 'audited' ? ' Paid in the demo token SEANCE, which has an audit key. The Medium, with the recipient\'s key, opens one note (amount and memo). The Auditor, with the audit key, counts the amount of both and cannot read a memo.' : kind === 'revealed' ? " This sender revealed the amount on purpose, so there is nothing sealed to read: compare the Stranger's view with the other demos." : ''
   if (s.preview) return 'A saved example is on the table, so the three ghosts have something to read. Nothing has been asked of the indexer yet: summon a recent transaction to read a live one, or paste any id.'
-  if (s.forgotten) return `The public indexer no longer holds this transaction, so this is the copy saved on ${savedOn}. Anything you paste still goes to the live indexer. ${what}${about}`
+  if (s.forgotten) return `The public indexer no longer holds this transaction, so this is the copy saved on ${savedOn}. Anything you paste is still looked up live. ${what}${about}`
+  if (s.list) return `${s.list.found ? `Found in the indexer's latest ${plural(s.list.size, 'transaction')}, so the indexer was not asked for this id.` : `Summon downloaded the indexer's latest ${plural(s.list.size, 'transaction')} and picked this one in your browser. The indexer saw your IP address, the time and the request for the list, and no id.`} ${what}`
+  if (!kind && s.mode === 'live') return `You asked the indexer for this id, so it saw the id, your IP address and the time. ${what}`
   return `${what}${about}`
 }
 
@@ -140,11 +171,13 @@ const cardsFar = (): boolean => {
   return oneColumn.matches || top < 0 || top > window.innerHeight / 2
 }
 
-async function load(job: () => Promise<Shown>, opts: { key?: string; auditKey?: string; fromUser?: boolean } = {}): Promise<void> {
+/** `asked`: the id being looked up, so that a miss can offer to ask for it by id. `saying`: the status line while the work is under way. */
+async function load(job: () => Promise<Shown>, opts: { key?: string; auditKey?: string; fromUser?: boolean; asked?: string; saying?: string } = {}): Promise<void> {
   if (busy) return
   const mine = ++loadSeq
   setBusy(true)
-  setStatus(data.mode === 'live' ? 'Calling the indexer…' : 'Opening the recording…')
+  ask.hidden = true
+  setStatus(opts.saying ?? (data.mode === 'live' ? 'Calling the indexer…' : 'Opening the recording…'))
   try {
     const shown = await job()
     if (mine !== loadSeq) return
@@ -152,7 +185,8 @@ async function load(job: () => Promise<Shown>, opts: { key?: string; auditKey?: 
     renderStranger(strangerBody, shown)
     renderLeaks(leaksBody, shown.view)
     mediumActions.replaceChildren(proofLinks(shown)[0]) // the Medium card has its own link to the same transaction
-    if (!shown.preview) {
+    if (shown.mode === 'file') history.replaceState(null, '', location.pathname + location.search) // the address bar must not keep pointing at another transaction
+    else if (!shown.preview) {
       txid.value = shown.view.id
       history.replaceState(null, '', `#tx=${shown.view.id}`)
     }
@@ -162,6 +196,7 @@ async function load(job: () => Promise<Shown>, opts: { key?: string; auditKey?: 
     }
     if (opts.auditKey) checkRadio('audit-key', opts.auditKey)
     reflectMode()
+    renderNet()
     setStatus(describe(shown), shown.fellBack || shown.quietChain ? 'warn' : 'info')
     if (opts.fromUser && cardsFar()) reveal(strangerCard, 'start')
     await hear()
@@ -173,8 +208,14 @@ async function load(job: () => Promise<Shown>, opts: { key?: string; auditKey?: 
     renderLeaks(leaksBody, null)
     clear(mediumActions)
     reflectMode()
-    if (e instanceof LookupError) setStatus(e.message, 'error')
-    else {
+    renderNet()
+    if (e instanceof LookupError) {
+      setStatus(e.message, e.kind === 'not-listed' ? 'warn' : 'error')
+      if (e.kind === 'not-listed' && opts.asked) {
+        pending = opts.asked
+        ask.hidden = false
+      }
+    } else {
       console.error(e)
       setStatus('Something unexpected went wrong. Try again, or switch to recorded data.', 'error')
     }
@@ -198,7 +239,29 @@ for (const [box, group] of [[keysBox, 'key'], [auditKeysBox, 'audit-key']] as co
 
 $('pick').addEventListener('submit', (e) => {
   e.preventDefault()
-  void load(() => data.lookup(txid.value), { fromUser: true })
+  const id = txid.value
+  void load(() => data.lookup(id), { fromUser: true, asked: id })
+})
+txid.addEventListener('input', () => {
+  ask.hidden = true // the question was about the id that stood there before
+})
+$('ask-anyway').addEventListener('click', () => void load(() => data.lookup(pending, { askAnyway: true }), { fromUser: true, saying: 'Asking the indexer for this id…' }))
+const openFile = (): void => {
+  if (!busy) fileInput.click()
+}
+$('open-file').addEventListener('click', openFile)
+$('ask-file').addEventListener('click', openFile)
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files?.[0]
+  fileInput.value = '' // so the same file can be opened again
+  if (!file) return
+  const job = async (): Promise<Shown> => {
+    const opened = netlog.mark()
+    const shown = await data.fromFile(file)
+    fileMark = opened
+    return shown
+  }
+  void load(job, { fromUser: true, saying: 'Opening your file…' })
 })
 $('summon').addEventListener('click', () => void load(() => data.recent(), { fromUser: true }))
 $('hold').addEventListener('click', () => {
@@ -227,6 +290,7 @@ $('look').removeAttribute('disabled')
 setStatus('')
 
 reflectMode()
+renderNet()
 renderPoltergeist($('polt-body'), poltergeist(recordedWorld())) // recorded data only: the same numbers on every visit
 $('template-code').textContent = templateSource
 $('template-lines').textContent = plural(templateSource.trimEnd().split('\n').length, 'line')
@@ -236,7 +300,7 @@ if (fromHash) {
   renderLeaks(leaksBody, null)
   void hear()
   void count()
-  void load(() => data.lookup(fromHash))
+  void load(() => data.lookup(fromHash), { asked: fromHash })
 } else {
   // The first screen is never empty: the three ghosts read demo 1 from the recording, with Bob's key and the audit key already in hand.
   // The address bar and the id box stay as they are, and the status line says it is a saved example.

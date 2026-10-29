@@ -8,10 +8,10 @@
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#0d0b13" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://kylne700.github.io/seance/" />
+    <meta property="og:url" content="https://kylne700.github.io/seance-v2/" />
     <meta property="og:title" content="Seance: three ghosts read one private Tari payment" />
     <meta property="og:description" content="Pick a real Tari Ootle stealth transaction and watch three viewers read the same bytes: a stranger sees sealed envelopes, a medium with the recipient&rsquo;s view key reads the amount and memo, an auditor with the token&rsquo;s audit key reads the amount only." />
-    <meta property="og:image" content="https://kylne700.github.io/seance/og.png" />
+    <meta property="og:image" content="https://kylne700.github.io/seance-v2/og.png" />
     <meta property="og:image:alt" content="Seance: three ghosts, the Stranger, the Medium and the Auditor, read one private Tari payment." />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
@@ -39,9 +39,11 @@
               <input id="txid" name="txid" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" placeholder="64 hexadecimal characters" aria-describedby="txid-hint" />
               <button class="btn primary" type="submit" id="look" disabled aria-disabled="true">Look at it</button>
             </div>
-            <p class="hint" id="txid-hint">Any transaction on the Esmeralda test network. Only this id is sent, and only to the indexer. Once it is shown, the links beside it let you check the public fields yourself.</p>
+            <p class="hint" id="txid-hint">Any transaction on the Esmeralda test network. The page looks for the id in the indexer's list of latest transactions first, and that request carries no id. An id that is not in the list is asked for by id only if you say so. The links beside an answer open another site, which is then told the id.</p>
             <div class="row">
               <button class="btn ghost" type="button" id="summon" aria-disabled="true">Summon a recent transaction</button>
+              <button class="btn ghost" type="button" id="open-file" aria-disabled="true">Open a saved transaction file</button>
+              <input type="file" id="file" accept=".json,application/json" hidden />
             </div>
           </form>
 
@@ -51,6 +53,7 @@
               <select id="demo" name="demo"></select>
               <button class="btn primary" type="button" id="hold" aria-disabled="true">Hold the seance</button>
             </div>
+            <p class="hint">These are public transactions from our own test account, so the page asks the indexer for them by id.</p>
           </div>
         </div>
 
@@ -60,6 +63,37 @@
           <button class="btn ghost small" type="button" id="mode-switch" aria-pressed="false" aria-disabled="true">Use recorded data</button>
         </div>
         <p class="status info" id="status" role="status" aria-live="polite">The page's code is still loading. The buttons wake up when it is ready.</p>
+        <div class="row" id="ask" hidden>
+          <button class="btn primary small" type="button" id="ask-anyway">Ask for it anyway</button>
+          <button class="btn ghost small" type="button" id="ask-file">Open a saved transaction file</button>
+        </div>
+      </section>
+
+      <section class="netlog" id="netlog" aria-labelledby="netlog-h">
+        <h2 id="netlog-h">What this page asked of the network</h2>
+        <p class="net-head" id="net-head">The list appears when the page's code has loaded.</p>
+        <p class="net-file" id="net-file" hidden></p>
+        <details class="note">
+          <summary>Every request, one by one</summary>
+          <div class="table-wrap" tabindex="0" role="region" aria-label="Every request this page made">
+            <table class="net">
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Started</th>
+                  <th scope="col">Host</th>
+                  <th scope="col">Asked for</th>
+                  <th scope="col">Sent</th>
+                  <th scope="col">Read</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">What that host learns</th>
+                </tr>
+              </thead>
+              <tbody id="net-rows"></tbody>
+            </table>
+          </div>
+          <p class="hint">The page wrote this list itself, so it is a report to check, not a proof: your browser's network panel is the check. The list holds this page's own requests and the files the browser reports loading for it. It may miss what the browser does by itself, anything an extension does, and the links you open. "Sent" is the address plus any body, without the headers the browser adds. "Read" is the size of the answer after decoding, not what crossed the wire. Only the hex form of a key is searched for.</p>
+        </details>
       </section>
 
       <section class="lensed" aria-labelledby="lenses-h">
