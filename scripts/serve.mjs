@@ -1,5 +1,5 @@
-// Tiny static server for dist/: also serves it under a sub-path (e.g. /seance/) to prove the relative base works.
-//   node scripts/serve.mjs [dir=dist] [port=4273] [prefix=/seance/]      (library: import { serveDir })
+// Tiny static server for dist/: serves it under the sub-path the page is built for (vite base /seance-v2/), the way GitHub Pages does.
+//   node scripts/serve.mjs [dir=dist] [port=4273] [prefix=/seance-v2/]      (library: import { serveDir })
 import http from 'node:http'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { extname, join, normalize, resolve } from 'node:path'
@@ -26,7 +26,7 @@ export function serveDir(dir, port, prefix = '/') {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const [, , dir = 'dist', port = '4273', prefix = '/seance/'] = process.argv
+  const [, , dir = 'dist', port = '4273', prefix = '/seance-v2/'] = process.argv
   await serveDir(dir, Number(port), prefix)
   console.log(`serving ${dir} at http://127.0.0.1:${port}${prefix}`)
 }

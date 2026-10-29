@@ -14,7 +14,7 @@ const OUT = fileURLToPath(new URL('../docs/seance-ghosts.png', import.meta.url))
 const PORT = Number(process.env.SHOOT_PORT ?? 4375)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-const server = await serveDir(fileURLToPath(new URL('../dist', import.meta.url)), PORT, '/seance/')
+const server = await serveDir(fileURLToPath(new URL('../dist', import.meta.url)), PORT, '/seance-v2/')
 const dir = mkdtempSync(join(tmpdir(), 'seance-ghosts-'))
 const browser = await puppeteer.launch({
   executablePath: process.env.CHROMIUM ?? '/usr/bin/chromium',
@@ -25,7 +25,7 @@ const browser = await puppeteer.launch({
 try {
   const page = await browser.newPage()
   await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 })
-  await page.goto(`http://127.0.0.1:${PORT}/seance/`, { waitUntil: 'networkidle0' })
+  await page.goto(`http://127.0.0.1:${PORT}/seance-v2/`, { waitUntil: 'networkidle0' })
   // the Auditor has counted the saved example when its card holds a reading and no "Counting" bar
   await page.waitForFunction(() => document.querySelector('#audit-reading .reading') && !document.querySelector('#audit-reading .counting'), { timeout: 60000 })
   const text = await page.evaluate(() => document.body.innerText)

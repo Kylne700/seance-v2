@@ -77,7 +77,7 @@ function cspMeta(): Plugin {
 }
 
 export default defineConfig({
-  base: './',
+  base: '/seance-v2/', // where GitHub Pages serves this repository: https://kylne700.github.io/seance-v2/
   plugins: [wasmInline(), cspMeta(), wasmLicenseText()],
   optimizeDeps: { exclude: ['@tari-project/ootle', '@tari-project/ootle-wasm'] },
   server: { host: '127.0.0.1', port: 5273, strictPort: true },

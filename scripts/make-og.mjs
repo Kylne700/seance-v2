@@ -38,7 +38,7 @@ ${card('stranger', 'The Stranger', 'Sees only sealed bytes.', ghosts[0])}
 ${card('medium', 'The Medium', 'Reads the amount and the memo.', ghosts[1])}
 ${card('auditor', 'The Auditor', 'Counts the amount only.', ghosts[2])}
 </div>
-<p class="url"><span>kylne700.github.io/seance</span><span>open source &middot; MIT</span></p>
+<p class="url"><span>kylne700.github.io/seance-v2</span><span>open source &middot; MIT</span></p>
 </div></body></html>`
 
 const profile = mkdtempSync(join(tmpdir(), 'seance-og-'))
