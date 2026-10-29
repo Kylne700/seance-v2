@@ -1,35 +1,42 @@
-Links and recorded copies, checked 2026-10-29T19:33:31.438Z
+Links and recorded copies, checked 2026-10-29T20:24:33.230Z
 first indexer https://esme-indexer-a.ootle.tari.com, second indexer https://esme-indexer-b.ootle.tari.com, explorer https://explorer.tari.mw
-FAIL e99ccae24789ef34dbba783c9675f90f89757043a5f456b6d521df6df60ae15b  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL e04e6e78021a71bdfa6902674a5401fb64efb54ce948c5c4e5fc287cf6074a7f  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL 80a13d44a497870e01bdf42af626633c792f3df1f6fb802da884f37991dc0125  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL f302e0ba4dabc96c694934b4c11b857fd3d09de61c62428d991ffff78d3f85c3  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL 1bee7f75e876d109cbe3bb9317a416b96cd9da8386fa082530c0682301cbc009  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL a920bd7d69cbbf53f27c149b2fef7336c25e1db16c666d4c65176343be9a10c0  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL 4fd2cbd216c2c3a3d556b55a2235197f895ad88cc0ac8230aa47146262512939  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL 05d7f7a53117fed5dbe0fcd262b2c72af5b2251b4a10d78bdfcb97cbbf5efd55  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL 90b2373bd044ec96ce42ebf8f0d3e6f1e040bdda5931211a259f37e8ee2a4fe2  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL 99e275ac213ac64549e03ce53ea1e49f3f05b500ea7e73d16b7667b6450dc59c  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL 571724b644ed8c4b9efee6a528fa867a388fc68e87066c92809f2b8ae10f9ba8  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL 891b43606b33d8cdfcc37a44793210ef4a517312c3180772b154d86fc08a2ace  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL 1666311102df4c809a4092de5064d40114ff4616218df8ac74a7662b2c48ff8c  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL 0c3cc69e2a59bcd331ac4759c5187ed3c212d5f9a424cc1eeaa7293be68a5adb  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL 8206f7cc9cde4a7ede73ee9c27e7198744df0d97a13abc4cb451f85fd26776aa  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL 52396cf13c732ba72e6b248462d980dc392795c7e0c115b1cb0203248e468193  first indexer 404  second indexer 404  shows the id with outcome Commit: false  no recorded answer
-FAIL 6602b7b2a5d84e5ca2ac4cfb38699efe1ae73d183eec943794fd484d47ddf9f8  first indexer 404  second indexer 404  shows the id with outcome Commit: false  no recorded answer
-FAIL 3b12856d3f83792977244e795fb53a49d6a26ce09591a92aab42defe4f140f33  first indexer 404  second indexer 404  shows the id with outcome Commit: false  no recorded answer
-first indexer still holds 0 of 18 (404 for the rest: the page then shows the saved copy; not a failure); 0 of 15 recorded answers equal the second indexer's, source field aside
-FAIL 7976fa08de0acfda6f8e94fecb844e77b1a16404acf4a121732f0dab2498f503  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-FAIL 3d1ef4e5bcc6e27963d6f11a73604f03df15c7e06fa74b510953f4798f0848f0  first indexer 404  second indexer 404  shows the id with outcome Commit: false  DIFFERS from the recording
-recorded sample (Summon's fallback, saved 2026-10-20): first indexer still holds 0 of 2; 0 of 2 recorded answers equal the second indexer's, source field aside
-ok   negative control abababababab...  second indexer 404 (must be 404)
+ok   e99ccae24789ef34dbba783c9675f90f89757043a5f456b6d521df6df60ae15b  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   e04e6e78021a71bdfa6902674a5401fb64efb54ce948c5c4e5fc287cf6074a7f  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   80a13d44a497870e01bdf42af626633c792f3df1f6fb802da884f37991dc0125  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   f302e0ba4dabc96c694934b4c11b857fd3d09de61c62428d991ffff78d3f85c3  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   1bee7f75e876d109cbe3bb9317a416b96cd9da8386fa082530c0682301cbc009  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   a920bd7d69cbbf53f27c149b2fef7336c25e1db16c666d4c65176343be9a10c0  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   4fd2cbd216c2c3a3d556b55a2235197f895ad88cc0ac8230aa47146262512939  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   05d7f7a53117fed5dbe0fcd262b2c72af5b2251b4a10d78bdfcb97cbbf5efd55  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   90b2373bd044ec96ce42ebf8f0d3e6f1e040bdda5931211a259f37e8ee2a4fe2  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   99e275ac213ac64549e03ce53ea1e49f3f05b500ea7e73d16b7667b6450dc59c  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   571724b644ed8c4b9efee6a528fa867a388fc68e87066c92809f2b8ae10f9ba8  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   891b43606b33d8cdfcc37a44793210ef4a517312c3180772b154d86fc08a2ace  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   1666311102df4c809a4092de5064d40114ff4616218df8ac74a7662b2c48ff8c  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   0c3cc69e2a59bcd331ac4759c5187ed3c212d5f9a424cc1eeaa7293be68a5adb  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   8206f7cc9cde4a7ede73ee9c27e7198744df0d97a13abc4cb451f85fd26776aa  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   52396cf13c732ba72e6b248462d980dc392795c7e0c115b1cb0203248e468193  receipt: first 200, second 200  outcome Commit: true/true  no saved copy: the answer and the outcome only  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   6602b7b2a5d84e5ca2ac4cfb38699efe1ae73d183eec943794fd484d47ddf9f8  receipt: first 200, second 200  outcome Commit: true/true  no saved copy: the answer and the outcome only  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   3b12856d3f83792977244e795fb53a49d6a26ce09591a92aab42defe4f140f33  receipt: first 200, second 200  outcome Commit: true/true  no saved copy: the answer and the outcome only  identical: true  whole transaction by id (not judged): first 404, second 404
+the 18 transactions (15 with a saved copy): both receipts 200 with outcome Commit and agreeing with the saved copy where there is one for 18 of 18; identical on both indexers for 18 of 18; whole transaction by id (404 for the rest; not a failure): first indexer holds 0, second indexer holds 0
+ok   7976fa08de0acfda6f8e94fecb844e77b1a16404acf4a121732f0dab2498f503  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+ok   3d1ef4e5bcc6e27963d6f11a73604f03df15c7e06fa74b510953f4798f0848f0  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
+the recorded sample (Summon's fallback, saved 2026-10-20): both receipts 200 with outcome Commit and agreeing with the saved copy where there is one for 2 of 2; identical on both indexers for 2 of 2; whole transaction by id (404 for the rest; not a failure): first indexer holds 0, second indexer holds 0
+ok   negative control: a made-up id abababababab...  first indexer's receipt 404 (must be 404)
+ok   negative control: a made-up id abababababab...  second indexer's receipt 404 (must be 404)
+ok   negative control: 891b43606b33... saved copy against the receipt of 1666311102df...  disagrees on: spent notes
 ok   first indexer: template e2094ebe40...  http 200  name SeanceAuditorToken  code 123243 bytes
 ok   first indexer: token resource_469b4ea86...  http 200  its view key is the audit key (public half): true
 ok   second indexer: template e2094ebe40...  http 200  name SeanceAuditorToken  code 123243 bytes
 ok   second indexer: token resource_469b4ea86...  http 200  its view key is the audit key (public half): true
 ok   explorer page for the token  http 200  lists a View key starting d0f610b1e6: true
-ok   link https://raw.githubusercontent.com/Kylne700/seance/main/ledger.json  http 200
-ok   link https://github.com/Kylne700/seance/blob/main/template/src/lib.rs  http 200
 ok   link https://explorer.tari.mw  http 200
 ok   link https://ootle.tari.com  http 200
-RESULT: FAIL (20)
+FAIL link https://raw.githubusercontent.com/Kylne700/seance-v2/main/ledger.json  http 404  (waits for the push: not up yet)
+FAIL link https://github.com/Kylne700/seance-v2/blob/main/template/src/lib.rs  http 404  (waits for the push: not up yet)
+FAIL link https://github.com/Kylne700/seance-v2/actions/workflows/pages.yml/badge.svg  http 404  (waits for the push: not up yet)
+FAIL link https://kylne700.github.io/seance-v2/  http 404  (waits for the push: not up yet)
+FAIL link https://kylne700.github.io/seance-v2/media/ask-for-it-anyway.png  http 404  (waits for the push: not up yet)
+FAIL link https://kylne700.github.io/seance-v2/media/ghost-log-after-summon.png  http 404  (waits for the push: not up yet)
+FAIL link https://kylne700.github.io/seance-v2/media/saved-file-0-requests.png  http 404  (waits for the push: not up yet)
+RESULT: FAIL (7), of which 7 wait for the pushed repository and its Pages site
