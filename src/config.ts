@@ -3,8 +3,10 @@ export const INDEXER_URL = 'https://esme-indexer-a.ootle.tari.com'
 export const EXPLORER_URL = 'https://explorer.tari.mw'
 // How long one indexer call may take before the page treats the indexer as down and falls back to recorded data.
 export const INDEXER_TIMEOUT_MS = 8000
-// How many of the latest transactions the "summon" button looks at, and the lookups take their decoys from. One request, never a scan of the chain.
+// How many of the latest transactions the "summon" button looks at, and a lookup looks in for the id. One request, never a scan of the chain.
 export const RECENT_LIMIT = 40
+// How long that list is kept, so Summon and the lookups share one request for it. The indexer's own copy is good for 30 seconds (cache-control), so a minute is the same order.
+export const LIST_KEPT_MS = 60_000
 // The biggest saved transaction file the page will open. One transaction is a few KB.
 export const MAX_FILE_BYTES = 1024 * 1024
 // The explorer reads the same public indexer as this page (esme-indexer-a.ootle.tari.com), so it shows only what that indexer still holds.

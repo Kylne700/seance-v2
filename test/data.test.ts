@@ -2,7 +2,7 @@
 // test here touches the network. A fetch that throws if it is called stands in for "the network is blocked".
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import ledger from '../ledger.json'
-import { INDEXER_URL, MAX_FILE_BYTES, RECENT_LIMIT } from '../src/config.ts'
+import { INDEXER_URL, LIST_KEPT_MS, MAX_FILE_BYTES, RECENT_LIMIT } from '../src/config.ts'
 import { createData, demos, LookupError, ourIds, savedOn, type Problem } from '../src/data.ts'
 import { decryptOutput, listen } from '../src/decrypt.ts'
 import { txFromHash, type TxView } from '../src/chain.ts'
@@ -14,6 +14,9 @@ const keys = ledger.keys as Record<string, { viewSecret: string }>
 const txs = ledger.txs as unknown as { key: string; id: string; kind: string; reply: unknown; expected: Expected }[]
 const bobTx = txs[0] // Bob, 0.666 tTARI, "The candle went out. Did you do that?"
 const unknownId = 'ab'.repeat(32)
+// Two transactions that are not ours and not demos: a stranger's, as the indexer's list holds them.
+const strangers = ledger.recent.transactions as unknown as { transaction_id: string }[]
+const [inList, notInList] = strangers.map((t) => t.transaction_id)
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -26,9 +29,9 @@ const stubFetch = (impl: (url: string) => Promise<Response> | Response) => {
 const blocked = () => stubFetch(() => Promise.reject(new TypeError('fetch failed')))
 const never = () => stubFetch(() => new Promise<Response>(() => {}))
 
-// A fake indexer: its list of latest transactions at /transactions/recent, and one answer per id at /transactions/<id>.
+// A fake indexer: its list of latest transactions at /transactions/recent (by default 40 made-up ids and one stranger's real one), and one answer per id at /transactions/<id>.
 const idN = (n: number): string => n.toString(16).padStart(64, '0')
-const LISTED = Array.from({ length: RECENT_LIMIT }, (_, i) => ({ transaction_id: idN(i + 1), created_at: '2026-10-29 17:21:00.0' }))
+const LISTED = [...Array.from({ length: RECENT_LIMIT - 1 }, (_, i) => ({ transaction_id: idN(i + 1), created_at: '2026-10-29 17:21:00.0' })), strangers[0]]
 const indexer = (byId: (id: string) => Promise<Response> | Response, list: () => Promise<Response> | Response = () => json({ transactions: LISTED })) =>
   stubFetch((url) => (url.includes('/transactions/recent') ? list() : byId(url.slice(url.lastIndexOf('/') + 1))))
 type Spy = ReturnType<typeof stubFetch>
@@ -126,29 +129,20 @@ describe('recorded mode (the switch is on, or the network is blocked)', () => {
 })
 
 describe('live mode', () => {
-  it('asks only the indexer: first for its list of latest transactions, then for the id together with 7 others, all alike', async () => {
+  it('a demo is asked for by id, one request to the indexer, as before', async () => {
     const fetchSpy = indexer(() => json(bobTx.reply))
     const shown = await createData().lookup(bobTx.id)
-    expect(shown).toMatchObject({ mode: 'live', fellBack: false, crowd: { size: 8, inWindow: false, listed: RECENT_LIMIT } })
+    expect(shown).toMatchObject({ mode: 'live', fellBack: false })
+    expect(shown.list).toBeUndefined()
     await expectsReading(shown.view, bobTx)
-    expect(fetchSpy).toHaveBeenCalledTimes(1 + 8)
-    expect(urls(fetchSpy)[0]).toBe(`${INDEXER_URL}/transactions/recent?limit=${RECENT_LIMIT}`)
-    const asked = byIdUrls(fetchSpy)
-    const head = `${INDEXER_URL}/transactions/`
-    expect(asked).toHaveLength(8)
-    expect(new Set(asked).size).toBe(8)
-    expect(asked.every((u) => u.startsWith(head) && /^[0-9a-f]{64}$/.test(u.slice(head.length)))).toBe(true)
-    expect(askedFor(fetchSpy, bobTx.id)).toBe(1)
-    // nothing marks the one you care about: the same method, headers and options on all 8
-    const inits = fetchSpy.mock.calls.slice(1).map((c) => JSON.stringify({ ...c[1], signal: undefined }))
-    expect(new Set(inits).size).toBe(1)
+    expect(urls(fetchSpy)).toEqual([`${INDEXER_URL}/transactions/${bobTx.id}`])
   })
 
   it('summon makes one request for the recent list and picks a transaction that has sealed notes', async () => {
     const fetchSpy = stubFetch(() => json({ transactions: ledger.recent.transactions }))
     const data = createData({ pick: () => 0 })
     const shown = await data.recent()
-    expect(shown).toMatchObject({ mode: 'live', fellBack: false, quietChain: false })
+    expect(shown).toMatchObject({ mode: 'live', fellBack: false, quietChain: false, list: { size: ledger.recent.transactions.length, found: false } })
     expect(shown.view.outputs.length).toBeGreaterThan(0)
     expect(fetchSpy).toHaveBeenCalledTimes(1)
     const url = new URL(String(fetchSpy.mock.calls[0][0]))
@@ -231,118 +225,164 @@ describe('live mode', () => {
   it('an id the indexer does not know is "not found", not a fallback', async () => {
     indexer(() => json({ error: 'not known to this indexer' }, 404))
     const data = createData()
-    expect(await fails(data.lookup(unknownId))).toBe('not-found')
+    expect(await fails(data.lookup(unknownId, { askAnyway: true }))).toBe('not-found')
     expect(data.mode).toBe('live')
   })
 
   it('any other client error is "bad id", not a fallback', async () => {
     indexer(() => json({ error: 'bad request' }, 400))
     const data = createData()
-    expect(await fails(data.lookup(unknownId))).toBe('bad-id')
+    expect(await fails(data.lookup(unknownId, { askAnyway: true }))).toBe('bad-id')
     expect(data.mode).toBe('live')
   })
 
   it('an answer in a shape this page does not know is "format", not a fallback', async () => {
     indexer(() => json({ transaction: { nothing: 'useful' } }))
     const data = createData()
-    expect(await fails(data.lookup(unknownId))).toBe('format')
+    expect(await fails(data.lookup(unknownId, { askAnyway: true }))).toBe('format')
     expect(data.mode).toBe('live')
   })
 })
 
-describe('asking in a crowd (a lookup)', () => {
-  it('starts all 8 requests together, before any answer is back, so the indexer sees one burst', async () => {
-    const waiting: ((r: Response) => void)[] = []
-    const fetchSpy = indexer(() => new Promise<Response>((resolve) => waiting.push(resolve)))
-    const done = createData().lookup(bobTx.id)
-    await vi.waitFor(() => expect(waiting).toHaveLength(8))
-    expect(fetchSpy).toHaveBeenCalledTimes(1 + 8)
-    waiting.forEach((resolve) => resolve(json(bobTx.reply)))
-    expect((await done).crowd?.size).toBe(8)
-  })
+describe('crowd first: a lookup looks in the indexer\'s list before it names an id', () => {
+  const askAnywayFor = (spy: Spy, id: string) => urls(spy).filter((u) => u.endsWith(`/transactions/${id}`)).length
 
-  it('is done as soon as the answer for the id is back: slow or dead decoys cost nothing', async () => {
-    indexer((id) => (id === bobTx.id ? json(bobTx.reply) : new Promise<Response>(() => {})))
-    expect(await createData().lookup(bobTx.id)).toMatchObject({ mode: 'live', fellBack: false, crowd: { size: 8 } })
-  })
-
-  it('a decoy that fails, in any way, changes nothing and leaves no unhandled error behind', async () => {
-    indexer((id) => {
-      if (id === bobTx.id) return json(bobTx.reply)
-      if (id.endsWith('1')) return json({ error: 'boom' }, 500)
-      if (id.endsWith('2')) return Promise.reject(new TypeError('fetch failed'))
-      return json({ error: 'not known to this indexer' }, 404)
-    })
+  it('an id that is in the list is read from the list: one request for the list, none by id, and the id is in no address', async () => {
+    const fetchSpy = indexer(() => json({ error: 'must not be asked' }, 500))
     const data = createData()
-    for (let i = 0; i < 20; i++) expect(await data.lookup(bobTx.id)).toMatchObject({ mode: 'live', fellBack: false, forgotten: false })
+    const shown = await data.lookup(inList)
+    expect(shown).toMatchObject({ mode: 'live', fellBack: false, forgotten: false, list: { size: RECENT_LIMIT, found: true } })
+    expect(shown.view.id).toBe(inList)
+    expect(urls(fetchSpy)).toEqual([`${INDEXER_URL}/transactions/recent?limit=${RECENT_LIMIT}`])
+    expect(urls(fetchSpy).some((u) => u.includes(inList))).toBe(false)
+  })
+
+  it('what is read from the list is the transaction the indexer would give for that id', async () => {
+    indexer(() => json(strangers[0]), () => json({ transactions: LISTED }))
+    const data = createData()
+    const fromList = await data.lookup(inList)
+    const byId = await data.lookup(inList, { askAnyway: true })
+    expect(fromList.view).toEqual(byId.view)
+  })
+
+  it('the id may be typed in capitals or with spaces, and is still found in the list', async () => {
+    const fetchSpy = indexer(() => json({}, 500))
+    expect((await createData().lookup(`  ${inList.toUpperCase()}\n`)).view.id).toBe(inList)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('an id that is not in the list is not asked for: the visitor is told, and nothing by id is sent however often they try', async () => {
+    const fetchSpy = indexer(() => json(strangers[1]))
+    const data = createData()
+    for (let i = 0; i < 3; i++) {
+      const e = await data.lookup(notInList).catch((x: unknown) => x)
+      expect(e).toBeInstanceOf(LookupError)
+      expect((e as LookupError).kind).toBe('not-listed')
+      expect((e as LookupError).message).toBe(`This id is not among the indexer's latest ${RECENT_LIMIT} transactions. Asking the indexer for it by id would show it this id, together with your IP address and the time.`)
+    }
     expect(data.mode).toBe('live')
+    expect(byIdUrls(fetchSpy)).toEqual([])
+    expect(urls(fetchSpy).some((u) => u.includes(notInList))).toBe(false)
   })
 
-  it('the id you asked for is in the crowd exactly once, whether or not the list already holds it', async () => {
-    const inside = LISTED[5].transaction_id
-    const fetchSpy = indexer(() => json(bobTx.reply))
-    const shown = await createData().lookup(inside)
-    expect(shown.crowd).toMatchObject({ size: 8, inWindow: true })
-    expect(askedFor(fetchSpy, inside)).toBe(1)
-    expect(byIdUrls(fetchSpy)).toHaveLength(8)
+  it('then, when the visitor says so, the id is asked for: exactly one request by id', async () => {
+    const fetchSpy = indexer(() => json(strangers[1]))
+    const data = createData()
+    expect(await fails(data.lookup(notInList))).toBe('not-listed')
+    expect(byIdUrls(fetchSpy)).toHaveLength(0)
+    const shown = await data.lookup(notInList, { askAnyway: true })
+    expect(shown).toMatchObject({ mode: 'live', fellBack: false })
+    expect(shown.list).toBeUndefined()
+    expect(shown.view.id).toBe(notInList)
+    expect(byIdUrls(fetchSpy)).toEqual([`${INDEXER_URL}/transactions/${notInList}`])
+    expect(askAnywayFor(fetchSpy, notInList)).toBe(1)
   })
 
-  it('a short list makes a smaller crowd, and says so', async () => {
-    const fetchSpy = indexer(() => json(bobTx.reply), () => json({ transactions: LISTED.slice(0, 3) }))
-    expect((await createData().lookup(bobTx.id)).crowd).toMatchObject({ size: 4, listed: 3 })
-    expect(byIdUrls(fetchSpy)).toHaveLength(4)
+  it('"ask anyway" goes straight to the indexer by id: it needs no list', async () => {
+    const fetchSpy = indexer(() => json(strangers[1]), () => json({ error: 'must not be asked' }, 500))
+    await createData().lookup(notInList, { askAnyway: true })
+    expect(urls(fetchSpy)).toEqual([`${INDEXER_URL}/transactions/${notInList}`])
   })
 
-  it('an empty, missing or odd list sends the id alone, and says so', async () => {
-    for (const list of [{ transactions: [] }, {}, { transactions: 'x' }]) {
-      const fetchSpy = indexer(() => json(bobTx.reply), () => json(list))
-      expect((await createData().lookup(bobTx.id)).crowd).toMatchObject({ size: 1, listed: 0 })
-      expect(byIdUrls(fetchSpy)).toEqual([`${INDEXER_URL}/transactions/${bobTx.id}`])
+  it('every demo is asked for by id at once, with no list: they are our public transactions', async () => {
+    const fetchSpy = indexer((id) => json(demos.map((d) => [...txs, ...ledger.hero].find((t) => t.id === d.id)!.reply).find((r) => (r as { transaction: { transaction_id: string } }).transaction.transaction_id === id)))
+    const data = createData()
+    for (const d of demos) expect((await data.lookup(d.id)).view.id, `demo ${d.n}`).toBe(d.id)
+    expect(urls(fetchSpy)).toEqual(demos.map((d) => `${INDEXER_URL}/transactions/${d.id}`))
+  })
+
+  it('the list is asked for once and shared: Summon and lookups within a minute use the same copy', async () => {
+    let clock = 1_000_000
+    const fetchSpy = indexer(() => json({}, 500))
+    const data = createData({ now: () => clock, pick: () => 0 })
+    await data.recent()
+    await data.lookup(inList)
+    await data.recent()
+    await fails(data.lookup(notInList))
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    clock += LIST_KEPT_MS - 1
+    await data.lookup(inList)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    clock += 1 // a minute has passed: the next one asks again
+    await data.lookup(inList)
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+  })
+
+  it('two lookups started together share one request for the list', async () => {
+    const fetchSpy = indexer(() => json({}, 500))
+    const data = createData()
+    const [a, b] = await Promise.all([data.lookup(inList), fails(data.lookup(notInList))])
+    expect(a.view.id).toBe(inList)
+    expect(b).toBe('not-listed')
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('a list that failed is not kept: asking again asks the indexer again', async () => {
+    let down = true
+    const fetchSpy = indexer(() => json({}, 500), () => (down ? json({ error: 'down' }, 503) : json({ transactions: LISTED })))
+    const data = createData()
+    expect((await data.lookup(inList)).fellBack).toBe(true)
+    down = false
+    data.setMode('live')
+    expect(await data.lookup(inList)).toMatchObject({ mode: 'live', list: { found: true } })
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+  })
+
+  it('an empty list means the id is not in it', async () => {
+    indexer(() => json({}, 500), () => json({ transactions: [] }))
+    const e = await createData().lookup(inList).catch((x: unknown) => x)
+    expect((e as LookupError).kind).toBe('not-listed')
+    expect((e as LookupError).message).toContain('latest 0 transactions')
+  })
+
+  it('an answer that is no list counts as no answer: recorded data takes over, after that one request', async () => {
+    for (const odd of [{}, { transactions: 'x' }, { transactions: null }]) {
+      const fetchSpy = indexer(() => json({}, 500), () => json(odd))
+      expect(await createData().lookup(inList)).toMatchObject({ mode: 'recorded', fellBack: true })
+      expect(fetchSpy).toHaveBeenCalledTimes(1)
     }
   })
 
-  it('a list the indexer refuses with a client error stops the lookup ("no crowd"): nothing about the id is sent and the page stays live', async () => {
-    const fetchSpy = indexer(() => json(bobTx.reply), () => json({ error: 'forbidden' }, 403))
+  it('a list full of entries this page cannot use means the id is not in it', async () => {
+    const fetchSpy = indexer(() => json({}, 500), () => json({ transactions: [null, 7, 'a', { transaction_id: 5 }] }))
+    expect(await fails(createData().lookup(inList))).toBe('not-listed')
+    expect(byIdUrls(fetchSpy)).toHaveLength(0)
+  })
+
+  it('an entry this page cannot read is "format", not a fallback', async () => {
+    indexer(() => json({}, 500), () => json({ transactions: [{ transaction_id: inList, transaction: { nothing: 'useful' } }] }))
     const data = createData()
-    const e = await data.lookup(bobTx.id).catch((x: unknown) => x)
-    expect(e).toBeInstanceOf(LookupError)
-    expect((e as LookupError).kind).toBe('no-crowd')
-    expect((e as LookupError).message).toMatch(/Nothing was asked about your id/)
+    expect(await fails(data.lookup(inList))).toBe('format')
     expect(data.mode).toBe('live')
-    expect(fetchSpy).toHaveBeenCalledTimes(1)
-    expect(urls(fetchSpy).some((u) => u.includes(bobTx.id))).toBe(false)
   })
 
-  it('a 404 on the list is not mistaken for "not found" or for a demo the indexer forgot', async () => {
-    indexer(() => json(bobTx.reply), () => json({ error: 'not known to this indexer' }, 404))
-    expect(await fails(createData().lookup(bobTx.id))).toBe('no-crowd')
-    expect(await fails(createData().lookup(unknownId))).toBe('no-crowd')
-  })
-
-  it('the id failing after the list worked: the page goes recorded, and still says the id went out in a crowd', async () => {
-    const fetchSpy = indexer((id) => (id === bobTx.id ? json({ error: 'down' }, 503) : json(bobTx.reply)))
+  it('in recorded mode nothing is asked, listed or not', async () => {
+    const fetchSpy = blocked()
     const data = createData()
-    const shown = await data.lookup(bobTx.id)
-    expect(shown).toMatchObject({ mode: 'recorded', fellBack: true, crowd: { size: 8 } })
-    expect(data.mode).toBe('recorded')
-    expect(byIdUrls(fetchSpy)).toHaveLength(8)
-  })
-
-  it('the id taking too long counts as an outage too, after the timeout, without waiting for the decoys', async () => {
-    indexer(() => new Promise<Response>(() => {}))
-    const data = createData({ timeoutMs: 40 })
-    expect(await data.lookup(bobTx.id)).toMatchObject({ mode: 'recorded', fellBack: true, crowd: { size: 8 } })
-  })
-
-  it('the crowd is new every time: two lookups of one id do not ask for the same set', async () => {
-    const fetchSpy = indexer(() => json(bobTx.reply))
-    const data = createData()
-    await data.lookup(bobTx.id)
-    const first = new Set(byIdUrls(fetchSpy))
-    await data.lookup(bobTx.id)
-    const second = byIdUrls(fetchSpy).slice(8)
-    expect(second).toHaveLength(8)
-    expect(second.every((u) => first.has(u))).toBe(false) // the chance of the same 7 out of 39 is about 1 in 15 million
+    data.setMode('recorded')
+    expect((await data.lookup(inList)).mode).toBe('recorded')
+    expect(await fails(data.lookup(unknownId))).toBe('not-recorded')
+    expect(fetchSpy).not.toHaveBeenCalled()
   })
 })
 
@@ -354,7 +394,7 @@ describe('opening a saved transaction file', () => {
     const data = createData()
     const shown = await data.fromFile(file(JSON.stringify(bobTx.reply)))
     expect(shown).toMatchObject({ mode: 'file', fellBack: false, forgotten: false, quietChain: false, ours: false, preview: false })
-    expect(shown.crowd).toBeUndefined()
+    expect(shown.list).toBeUndefined()
     await expectsReading(shown.view, bobTx)
     expect(data.mode).toBe('live')
     expect(fetchSpy).not.toHaveBeenCalled()
@@ -408,16 +448,26 @@ describe('automatic fallback to recorded data', () => {
     ['the indexer throttles us (429)', () => stubFetch(() => json({ error: 'slow down' }, 429))],
   ]
   for (const [name, arrange] of cases) {
-    it(`${name}: the page switches to recorded, says so, and the demo still reads right`, async () => {
+    it(`${name}: a stranger's id switches the page to recorded after the list request alone, and says so`, async () => {
+      const fetchSpy = arrange()
+      const data = createData({ timeoutMs: 40 })
+      const shown = await data.lookup(inList)
+      expect(shown).toMatchObject({ mode: 'recorded', fellBack: true, forgotten: false })
+      expect(shown.list).toBeUndefined()
+      expect(shown.view.id).toBe(inList)
+      expect(data.mode).toBe('recorded')
+      // the list of latest transactions was the only thing asked: the id left the page in no request
+      expect(urls(fetchSpy)).toEqual([`${INDEXER_URL}/transactions/recent?limit=${RECENT_LIMIT}`])
+    })
+
+    it(`${name}: a demo, asked for by id, switches the page to recorded, says so, and still reads right`, async () => {
       const fetchSpy = arrange()
       const data = createData({ timeoutMs: 40 })
       const shown = await data.lookup(bobTx.id)
       expect(shown).toMatchObject({ mode: 'recorded', fellBack: true, forgotten: false })
-      expect(shown.crowd).toBeUndefined()
+      expect(shown.list).toBeUndefined()
       expect(data.mode).toBe('recorded')
-      // the list of latest transactions was the only thing asked: nothing about the id left the page
-      expect(fetchSpy).toHaveBeenCalledTimes(1)
-      expect(urls(fetchSpy).some((u) => u.includes(bobTx.id))).toBe(false)
+      expect(urls(fetchSpy)).toEqual([`${INDEXER_URL}/transactions/${bobTx.id}`])
       await expectsReading(shown.view, bobTx)
       // end to end: the very same words reach the medium
       const heard = await listen(keys.bob.viewSecret, shown.view.outputs)
@@ -466,7 +516,7 @@ describe('automatic fallback to recorded data', () => {
     expect(fetchSpy).not.toHaveBeenCalled()
     data.setMode('live')
     expect((await data.lookup(bobTx.id)).mode).toBe('live')
-    expect(fetchSpy).toHaveBeenCalledTimes(1 + 8)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -482,14 +532,14 @@ describe('a demo the indexer no longer holds (it answers 404)', () => {
     await expectsReading(shown.view, bobTx)
   })
 
-  it('every demo is served that way, asked for once each among its crowd', async () => {
+  it('every demo is served that way, asked for once each', async () => {
     const fetchSpy = indexer(gone)
     const data = createData()
     for (const d of demos) {
-      expect(await data.lookup(d.id), `demo ${d.n}`).toMatchObject({ mode: 'recorded', forgotten: true, fellBack: false, crowd: { size: 8 } })
+      expect(await data.lookup(d.id), `demo ${d.n}`).toMatchObject({ mode: 'recorded', forgotten: true, fellBack: false })
       expect(askedFor(fetchSpy, d.id), `demo ${d.n}`).toBe(1)
     }
-    expect(byIdUrls(fetchSpy)).toHaveLength(8 * demos.length)
+    expect(byIdUrls(fetchSpy)).toHaveLength(demos.length)
     expect(data.mode).toBe('live')
   })
 
@@ -498,13 +548,13 @@ describe('a demo the indexer no longer holds (it answers 404)', () => {
     const data = createData()
     expect((await data.lookup(bobTx.id)).forgotten).toBe(true)
     expect(await data.lookup(txs[1].id)).toMatchObject({ mode: 'live', forgotten: false })
-    const e = await data.lookup(unknownId).catch((x: unknown) => x)
+    const e = await data.lookup(unknownId, { askAnyway: true }).catch((x: unknown) => x)
     expect(e).toBeInstanceOf(LookupError)
     expect((e as LookupError).kind).toBe('not-found')
     expect((e as LookupError).message).toMatch(/old id may be gone/)
     expect(data.mode).toBe('live')
     expect([bobTx.id, txs[1].id, unknownId].map((id) => askedFor(fetchSpy, id))).toEqual([1, 1, 1])
-    expect(byIdUrls(fetchSpy)).toHaveLength(3 * 8)
+    expect(byIdUrls(fetchSpy)).toHaveLength(3)
   })
 
   it('an indexer that comes back with its history is believed again', async () => {
@@ -518,7 +568,7 @@ describe('a demo the indexer no longer holds (it answers 404)', () => {
 
   it('is no outage: an id it is not "forgotten" for is not served from the recording', async () => {
     indexer(gone)
-    expect(await fails(createData().lookup(unknownId))).toBe('not-found')
+    expect(await fails(createData().lookup(unknownId, { askAnyway: true }))).toBe('not-found')
   })
 })
 
