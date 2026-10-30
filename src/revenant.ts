@@ -38,7 +38,7 @@ export function tiers(v: TxView): Tier[] {
     },
     {
       n: 3,
-      says: 'An audited token: every note must carry a copy of its amount, and the key that opens it is on the chain. One solved key opens every amount of the token, past and future. After that, each note needs only the amount search the Auditor already does. The SEANCE demo token is such a token.',
+      says: 'An audited token: every note must carry a copy of its amount, and the public half of the key that opens it is on the chain, in the token. One solved key opens every amount of the token, past and future. After that, each note needs only the amount search the Auditor already does. The SEANCE demo token is such a token.',
       here: proven ? `${proven} of the ${sealed} here ${both(proven, 'carries', 'carry')} an audit copy. That computer would read ${both(proven, 'its amount', 'their amounts')} from public data alone.` : 'No note here carries an audit copy, so this tier does not reach this transaction.',
     },
   ]
