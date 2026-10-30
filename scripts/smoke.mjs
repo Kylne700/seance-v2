@@ -2100,7 +2100,7 @@ async function walletRun(browser, w) {
   check(!s.review && s.calls.length === 0, `${tag}: "Change my words" closes the review without asking the wallet`, '')
   await reviewWords(page, WALLET_WORDS)
   s = await walletState(page)
-  check(s.echo === `“${WALLET_WORDS}”` && /^To Bob, the demo recipient \(otl_esm_1[0-9a-z]+…[0-9a-z]+\): 0\.031415 tTARI \(testnet TARI\), and a fee on top, paid privately\.$/.test(s.to) && s.calls.length === 0, `${tag}: the review shows the words and the recipient and the amount, and still nothing has gone to the wallet`, `${s.echo} | ${s.to}`)
+  check(s.echo === `“${WALLET_WORDS}”` && /^To Bob, the demo recipient \(otl_esm_1[0-9a-z]+…[0-9a-z]+\): 0\.031415 tTARI \(testnet TARI\), plus a fee on top\. The fee's amount is public\. Your wallet pays it from private funds\.$/.test(s.to) && s.calls.length === 0, `${tag}: the review shows the words and the recipient and the amount, and still nothing has gone to the wallet`, `${s.echo} | ${s.to}`)
   await shotEl(page, '#wallet', `seance-wallet-${w}-2-ready.png`)
 
   await armReading(page)

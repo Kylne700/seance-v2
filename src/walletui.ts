@@ -77,7 +77,7 @@ export function mountWallet({ $, data, show }: Deps): void {
     if (!wallet) return say(NO_WALLET)
     words = typed
     echo.textContent = `“${words}”`
-    to.textContent = `To Bob, the demo recipient (${short(bobAddress, 12)}): ${AMOUNT_TEXT}, and a fee on top, paid privately.`
+    to.textContent = `To Bob, the demo recipient (${short(bobAddress, 12)}): ${AMOUNT_TEXT}, plus a fee on top. The fee's amount is public. Your wallet pays it from private funds.`
     review.hidden = false
     say('')
   }

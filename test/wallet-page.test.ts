@@ -40,11 +40,11 @@ describe('index.html: the section', () => {
     expect(section).not.toMatch(/<form|\sstyle=|\son[a-z]+=|\ssrc=|\saction=/)
   })
 
-  it('names the amount as the wallet is asked for it, and says the fee is extra and private', () => {
+  it('names the amount as the wallet is asked for it, and says the fee is extra, public in amount and paid from private funds', () => {
     expect(html).toContain(AMOUNT_TEXT)
     expect(AMOUNT_TEXT).toBe('0.031415 tTARI (testnet TARI)')
     expect(Number(AMOUNT) / 1e6).toBe(0.031415) // 6 decimals
-    expect(section).toContain('The fee is extra, and is paid privately too.')
+    expect(section).toContain('The fee is extra. Its amount is public, and your wallet pays it from private funds (its Private fee setting). You need the payment plus the fee: in our own test send the fee was 0.015275 tTARI.')
   })
 
   it('warns, always on view, that Bob\'s key is published and anyone can read what is sent', () => {

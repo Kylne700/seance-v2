@@ -71,6 +71,14 @@ describe('findNote', () => {
     expect(summon).toContain(`limit=${RECENT_LIMIT}`)
   })
 
+  it('makes every look a real download: it asks with `cache: \'no-store\'`, which Summon\'s request does not', async () => {
+    const spy = listOnly(() => withIt([entry]))
+    const data = createData({ pick: () => 0 })
+    await data.recent()
+    await data.findNote(COMMITMENT, { fresh: true })
+    expect(spy.mock.calls.map((c) => c[1]?.cache)).toEqual([undefined, 'no-store'])
+  })
+
   it('reads the commitment in either case', async () => {
     listOnly(() => withIt([entry]))
     expect((await createData().findNote(COMMITMENT.toUpperCase()))?.view.id).toBe((fixture as { transaction_id: string }).transaction_id)
@@ -151,6 +159,7 @@ describe('the whole send, with a mock wallet and a fake indexer', () => {
     const watched = await watching
     expect(watched).toMatchObject({ checks: 3, failed: 0, stopped: null })
     expect(spy).toHaveBeenCalledTimes(3) // the kept copy of the list (60 s) was bypassed: 3 looks, 3 requests
+    expect(spy.mock.calls.every((c) => c[1]?.cache === 'no-store')).toBe(true) // and the browser's own cache (30 s) too, so each look is a real download
     expect(urls(spy).every((u) => u.includes('/transactions/recent'))).toBe(true)
     // The ghost log lists each of them like Summon's request, and none names an id.
     expect(netlog.entries().map((e) => e.kind)).toEqual(['list', 'list', 'list'])

@@ -2,7 +2,7 @@
 // Summon and a lookup both start from the indexer's list of latest transactions, one request that is the same for every visitor and names no id.
 // A lookup reads its id out of that list. It asks the indexer for an id by itself only when the visitor says so, or when the id is one of our demos. A file asks nobody.
 // The recorded set is imported as a module, so using it needs no request and works with the network blocked.
-import { IndexerClient } from '@tari-project/ootle-indexer'
+import { IndexerClient, transports } from '@tari-project/ootle-indexer'
 import ledger from '../ledger.json'
 import { INDEXER_TIMEOUT_MS, INDEXER_URL, LIST_KEPT_MS, MAX_FILE_BYTES, RECENT_LIMIT } from './config.ts'
 import { isTxId, ParseError, parseTransaction, type TxView } from './chain.ts'
@@ -118,11 +118,23 @@ const indexerDown = (e: unknown): boolean => {
   return typeof status !== 'number' || status >= 500 || status === 429
 }
 
+/**
+ * The indexer lets a browser keep its list of latest transactions for 30 s (its `Cache-Control` says `max-age=30`), so with 20 s between two looks every second look could come from the browser's own cache.
+ * The SDK hands the request it builds on to fetch as it is, so `cache: 'no-store'` on it makes the browser ask the indexer.
+ */
+class NoStoreTransport extends transports.FetchTransport {
+  override sendRequest<T>(path: string, request: Parameters<transports.FetchTransport['sendRequest']>[1], options?: transports.TransportOptions): Promise<T> {
+    const asked = { ...request, cache: 'no-store' as const }
+    return super.sendRequest<T>(path, asked, options)
+  }
+}
+
 export function createData(opts: { timeoutMs?: number; pick?: (n: number) => number; now?: () => number } = {}) {
   const timeoutMs = opts.timeoutMs ?? INDEXER_TIMEOUT_MS
   const pick = opts.pick ?? ((n: number) => Math.floor(Math.random() * n))
   const now = opts.now ?? Date.now
   const client = IndexerClient.usingFetchTransport(INDEXER_URL)
+  const noStoreClient = IndexerClient.new(new NoStoreTransport(INDEXER_URL)) // for the payment watch's looks: the same requests, but the browser must ask the indexer for each
   let mode: Mode = 'live'
 
   // The SDK has no timeout of its own, so race it against a timer.
@@ -135,10 +147,10 @@ export function createData(opts: { timeoutMs?: number; pick?: (n: number) => num
   // The list of latest transactions: one request that is the same for every visitor and every lookup, so it says nothing about which id is wanted.
   // Summon picks from it and a lookup looks in it first. One copy is kept for a minute so the two share a request; a failed request is not kept.
   let held: { at: number; items: Promise<unknown[]> } | null = null
-  // `fresh`: the request is made again, whatever is kept. The payment watch (findNote) uses it, so that a kept copy (up to 60 s old) cannot hide a new payment.
+  // `fresh`: the request is made again, whatever is kept and whatever the browser has cached. The payment watch (findNote) uses it, so that a kept copy (up to 60 s old) or a cached answer (up to 30 s old) cannot hide a new payment.
   const listing = (fresh = false): Promise<unknown[]> => {
     if (!fresh && held && now() - held.at < LIST_KEPT_MS) return held.items
-    const items = within(client.listRecentTransactions({ limit: RECENT_LIMIT, last_id: null, source: null })).then((l) => {
+    const items = within((fresh ? noStoreClient : client).listRecentTransactions({ limit: RECENT_LIMIT, last_id: null, source: null })).then((l) => {
       if (!Array.isArray(l.transactions)) throw new Error('the indexer gave no list of transactions') // an answer that is no list counts as no answer, as it always did for Summon
       return l.transactions as unknown[]
     })

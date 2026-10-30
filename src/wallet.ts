@@ -9,7 +9,7 @@ export interface Provider {
 }
 
 export const NETWORK = 'esmeralda'
-/** 0.031415 tTARI (testnet TARI) in the token's smallest unit (6 decimals). The fee is extra, and is paid privately. */
+/** 0.031415 tTARI (testnet TARI) in the token's smallest unit (6 decimals). The fee is extra: its amount is public, and the wallet pays it from private funds. */
 export const AMOUNT = '31415'
 export const AMOUNT_TEXT = '0.031415 tTARI (testnet TARI)'
 export const RESOURCE = 'resource_' + '01'.repeat(32)
@@ -34,7 +34,7 @@ export class WalletError extends Error {
 }
 
 const SAYS: Record<Exclude<Problem, 'failed'>, string> = {
-  'no-wallet': 'This needs the Sapient wallet extension in a Chromium browser, on the Esmeralda testnet, with a little private testnet TARI. No wallet? The video shows this step.',
+  'no-wallet': 'This needs the Sapient wallet extension in a Chromium browser, on the Esmeralda testnet, with private testnet TARI for the payment and its fee. No wallet? The video shows this step.',
   'wrong-network': 'Your wallet is not on the Esmeralda testnet, so nothing was sent. Switch the wallet to Esmeralda and try again.',
   'no-private-spend': 'This wallet does not offer private sending, so nothing was sent.',
   rejected: 'You said no in the wallet, so nothing was sent.',
@@ -122,7 +122,7 @@ export async function sendSecret(wallet: Provider, o: { recipient: string; memo:
     recipientWalletAddress: o.recipient,
     amount: AMOUNT,
     memo: o.memo,
-    feeType: 'private', // the fee comes out of private funds too, so the sender's account is not named on the chain
+    feeType: 'private', // the fee comes out of private funds; its amount is public
     enforceFeeType: true,
     // no minimumValuePromise: it is a public number
   })
