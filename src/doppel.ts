@@ -99,7 +99,7 @@ export const RUNGS: Rung[] = [
     id: 'none',
     title: 'No key',
     lines: [
-      ['Opens', 'Only what is public: the token, the spend graph, the fee, the times and the sizes (the list under What still leaks).'],
+      ['Opens', 'Only what is public: the token, the spend graph, the signing keys, the fee, the times and the sizes (the list under What still leaks).'],
       ['Does not open', 'Any amount or memo.'],
       ['Can spend', 'No. It holds no key.'],
       ['Can the owner stop it', 'There is no key to stop. What is public stays public.'],

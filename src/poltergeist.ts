@@ -200,5 +200,5 @@ export function summary(r: Report): string {
   const onClear = clear.every((x) => full(x.transparent)) ? `On the synthetic transparent ledger each of the ${clear.length} tricks gets all ${r.of}. ` : ''
   const lost = held.length ? `${list(held.map((x) => `${TRICKS[x.id].plain} ${verb(x.id, x.tari)}`))}. ` : ''
   const kept = open.length ? `${cap(list(open.map((x) => TRICKS[x.id].plain)))} still ${open.length === 1 ? 'ties' : 'tie'} all ${r.of}.` : ''
-  return `${onClear}On Tari, ${lost}${kept}`.trim()
+  return `${onClear}For these ${r.of} recorded payments, ${lost}${kept}`.trim()
 }

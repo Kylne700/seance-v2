@@ -30,8 +30,8 @@ const byId = (list: ReturnType<typeof leaks>): Record<LeakId, string[]> => Objec
 
 describe('the panel', () => {
   const view = parseTransaction(txs[0].reply)
-  it('has the nine items of the brief and the audit proofs, once each, in a fixed order', () => {
-    expect(leaks(view).map((l) => l.id)).toEqual(['token', 'audit', 'spent', 'created', 'revealed', 'rule', 'times', 'epochs', 'fee', 'length'])
+  it('has the items of the brief, the audit proofs and the signing keys, once each, in a fixed order', () => {
+    expect(leaks(view).map((l) => l.id)).toEqual(['token', 'audit', 'spent', 'created', 'revealed', 'rule', 'times', 'epochs', 'fee', 'length', 'signers'])
   })
   it('gives every item one plain caption that names no fix', () => {
     for (const l of leaks(view)) {
@@ -188,11 +188,26 @@ describe('change one field and only its item changes', () => {
     only('length', c)
   })
   it('a transaction with no private transfer says so item by item', () => {
-    const c = edit((v) => {
-      v.statements = []
-      v.outputs = []
-    })
+    const v = structuredClone(base)
+    v.statements = []
+    v.outputs = []
+    const list = leaks(v)
+    const c = byId(list)
     expect([c.token, c.spent, c.created, c.revealed, c.rule, c.length]).toEqual([[], [], [], [], [], []])
     expect(c.fee).toEqual(before.fee)
+    // "None" would say the transaction moves no token and no amount in the open; the page only reads private transfers, so it says that instead
+    const empty = Object.fromEntries(list.map((l) => [l.id, l.empty]))
+    expect(empty.token).toBe('Not read: this page reads tokens only from private transfers')
+    expect(empty.revealed).toBe('Not read: this page reads amounts in the open only from private transfers')
+    expect(list.filter((l) => l.empty != null).map((l) => l.id)).toEqual(['token', 'revealed'])
+    expect(leaks(base).every((l) => l.empty === undefined), 'with a private transfer the plain None stays').toBe(true)
+  })
+  it('signing keys', () => {
+    const a = 'ab'.repeat(32)
+    const c = edit((v) => (v.signers = [a, a, 'cd'.repeat(32)]))
+    expect(c.signers).toEqual([short(a, 12), short('cd'.repeat(32), 12)])
+    only('signers', c)
+    expect(edit((v) => (v.signers = [])).signers).toEqual([])
+    expect(before.signers.length, 'a recorded transaction names its signers').toBeGreaterThan(0)
   })
 })

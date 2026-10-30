@@ -252,7 +252,7 @@ describe('the words on the page', () => {
     expect(readFileSync(new URL('../index.html', import.meta.url), 'utf8')).toMatch(/The transparent ledger is synthetic\.<\/strong> It is not a real chain/)
   })
   it('the headline is built from the numbers', () => {
-    expect(summary(r)).toBe('On the synthetic transparent ledger each of the 4 tricks gets all 11. On Tari, address reuse ties 0 of 11 and amount matching finds 1 of 11. Timing, the fee fingerprint and the spend graph still tie all 11.')
+    expect(summary(r)).toBe('On the synthetic transparent ledger each of the 4 tricks gets all 11. For these 11 recorded payments, address reuse ties 0 of 11 and amount matching finds 1 of 11. Timing, the fee fingerprint and the spend graph still tie all 11.')
   })
   it('each note leans on a fact checked above and names no fix', () => {
     const n = notes(r)

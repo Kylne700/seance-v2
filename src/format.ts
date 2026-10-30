@@ -31,8 +31,8 @@ export const baseUnits = (v: bigint | number | string): string => BigInt(v).toLo
 /** First and last characters of a long hex string, for tight places. */
 export const short = (h: string, n = 8): string => (h.length <= 2 * n + 1 ? h : `${h.slice(0, n)}…${h.slice(-n)}`)
 
-/** A transaction without a summary was rejected before it ran, or is not finalized yet. */
-export const outcomeLabel = (v: { outcome: string | null; rejectedReason: string | null }): string => v.outcome ?? (v.rejectedReason ? 'Rejected' : 'Not finalized yet')
+/** No summary and no reason: the page shows only that. It does not know whether the network has settled the transaction. */
+export const outcomeLabel = (v: { outcome: string | null; rejectedReason: string | null }): string => v.outcome ?? (v.rejectedReason ? 'Rejected' : 'No summary yet')
 
 export const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`
 

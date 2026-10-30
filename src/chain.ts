@@ -28,7 +28,7 @@ export interface StealthStatement {
 
 export interface TxView {
   id: string
-  outcome: string | null // null while there is no summary: not finalized yet, or rejected before it ran
+  outcome: string | null // null when the indexer gave no summary; this page does not know why
   rejectedReason: string | null // the indexer's reason, when it gave one
   feePaid: number | null // micro-tTARI (uT)
   createdAt: string | null

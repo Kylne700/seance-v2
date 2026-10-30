@@ -3,12 +3,13 @@
 import type { StealthStatement, TxView } from './chain.ts'
 import { amountOf, plural, short, tari, when } from './format.ts'
 
-export type LeakId = 'token' | 'audit' | 'spent' | 'created' | 'revealed' | 'rule' | 'times' | 'epochs' | 'fee' | 'length'
+export type LeakId = 'token' | 'audit' | 'spent' | 'created' | 'revealed' | 'rule' | 'times' | 'epochs' | 'fee' | 'length' | 'signers'
 
 export interface Leak {
   id: LeakId
   term: string
   values: string[] // one line each; empty means this transaction shows nothing of the kind
+  empty?: string // what to print for no values, when "None" would claim more than the page reads
   mono: boolean // the values are identifiers, shown as code, rather than sentences
   caption: string
 }
@@ -30,6 +31,7 @@ export function leaks(v: TxView): Leak[] {
   const many = v.statements.length > 1
   const tag = (n: number): string => (many ? `Private transfer ${n + 1}: ` : '')
   const proven = (s: StealthStatement): number => s.outputs.filter((o) => o.viewableBalanceProof != null).length
+  const unread = v.statements.length === 0 // this page reads tokens and amounts only from private transfers
   const rules = new Map<string, number>()
   for (const o of v.outputs) rules.set(o.spendCondition, (rules.get(o.spendCondition) ?? 0) + 1)
   return [
@@ -38,6 +40,7 @@ export function leaks(v: TxView): Leak[] {
       term: 'Token (resource address)',
       mono: true,
       values: [...new Set(v.statements.map((s) => s.resource))],
+      empty: unread ? 'Not read: this page reads tokens only from private transfers' : undefined,
       caption: 'Which token moved is public, even when the amount is sealed.',
     },
     {
@@ -47,7 +50,7 @@ export function leaks(v: TxView): Leak[] {
       values: v.statements.flatMap((s, n) => (proven(s) ? [`${tag(n)}${proven(s)} of ${plural(s.outputs.length, 'sealed note')} ${s.outputs.length === 1 ? 'carries' : 'carry'} an audit proof`] : [])),
       caption: v.statements.some(proven)
         ? "Whoever holds the token's audit key can read the amount of each note that carries a proof, not its memo. It cannot spend if it is a fresh key used for nothing else (by the code; not tried)."
-        : 'None here. A token can be made with an audit key, and then each of its notes carries a proof that only that key opens.',
+        : 'None here. A token can be made with an audit key, and then each of its notes carries an audit proof: the amount encrypted to that key, which only that key opens.',
     },
     {
       id: 'spent',
@@ -71,6 +74,7 @@ export function leaks(v: TxView): Leak[] {
         ...(s.revealedIn !== '0' ? [`${tag(n)}Taken from a public balance: ${amountOf(s.resource, s.revealedIn)}`] : []),
         ...(s.revealedOut ? [`${tag(n)}Paid out in the open: ${amountOf(s.resource, s.revealedOut.amount)}${paysFee(s, v.feePaid) ? ', the network fee' : ''} (key ${short(s.revealedOut.receiver, 6)})`] : []),
       ]),
+      empty: unread ? 'Not read: this page reads amounts in the open only from private transfers' : undefined,
       caption: 'Anything moved in or out of a public balance is readable by everyone, unlike the sealed notes.',
     },
     {
@@ -107,6 +111,13 @@ export function leaks(v: TxView): Leak[] {
       mono: false,
       values: v.outputs.map((o, i) => `Note ${i + 1}: ${o.ciphertextBytes} bytes, ${o.ciphertextBytes <= NO_MEMO_BYTES ? 'no memo' : 'a memo is inside'}`),
       caption: `The size of the locked message is public. A note with no memo is ${NO_MEMO_BYTES} bytes. More means a memo is inside, and the size hints at how long it is.`,
+    },
+    {
+      id: 'signers',
+      term: 'Signing keys',
+      mono: true,
+      values: [...new Set(v.signers)].map((k) => short(k, 12)),
+      caption: 'The public keys that signed it are in the open. A key that signs many transactions ties them together.',
     },
   ]
 }

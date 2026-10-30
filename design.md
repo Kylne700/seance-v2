@@ -4,7 +4,7 @@ Why the page looks and behaves the way it does, so a reviewer can disagree with 
 
 ## The story
 
-A private payment on Tari is a letter sealed in plain sight. Everyone can pass the envelope around, and only one key opens it. The page makes that literal with three ghosts looking at the same real transaction, and a fourth who never opens the envelope at all:
+A private payment on Tari is a letter sealed in plain sight. Everyone can pass the envelope around, and only the keys it was sealed for open it. The page makes that literal with three ghosts looking at the same real transaction, and a fourth who never opens the envelope at all:
 
 - The **Stranger** has no key. It shows what an indexer shows anyone.
 - The **Medium** holds a recipient's view key and listens inside the page. It hears the amount and the memo of the notes made for that recipient.
@@ -21,7 +21,7 @@ Every field of a sealed note is the real value from the chain, in monospace, wit
 
 ## What still leaks
 
-Ten items, each read from the parsed transaction with no lookup and no guess (`src/leaks.ts`): the token, audit proofs, the spent notes, the new notes, amounts in the open, the spend rule, the times, the epoch window, the fee and the size of the locked message. Each shows this transaction's real values and one sentence of caption. Two decisions:
+Eleven items, each read from the parsed transaction with no lookup and no guess (`src/leaks.ts`): the token, audit proofs, the spent notes, the new notes, amounts in the open, the spend rule, the times, the epoch window, the fee, the size of the locked message and the signing keys. Each shows this transaction's real values and one sentence of caption. Two decisions:
 
 - **No fix is named.** None was tested here, so the panel says what is visible and why it matters, and stops. A suggestion nobody measured would be a claim.
 - **The panel is built from the same fields the Poltergeist reads.** The spent notes become its spend graph trick, the times and the epoch window its timing trick, the fee its fingerprint. The panel says what a stranger can see in one transaction; the Poltergeist shows what that is worth across eleven.

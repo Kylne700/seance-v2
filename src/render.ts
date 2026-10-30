@@ -14,11 +14,12 @@ const MAX_NOTES = 6 // a transaction with more sealed notes than this is cut her
 
 const KIND_CAPTION: Record<string, string> = {
   StealthTransfer: 'The private transfer: spends old sealed notes and creates new ones.',
-  PutLastInstructionOutputOnWorkspace: 'Keeps the revealed funds at hand for the next step.',
+  PutLastInstructionOutputOnWorkspace: 'Keeps the result of the previous instruction at hand for the next one.',
   TakeFromBucket: 'Splits a public amount off the revealed funds.',
   PayFeeFromBucket: 'Pays the network fee, in the open.',
-  CreateAccount: 'Opens a public account for a receiver.',
-  CallMethod: 'Calls a component, for example to take the fee funds out of a public account.',
+  CreateAccount: 'Opens a new public account.',
+  CallMethod: 'Calls a method of a component.',
+  CallFunction: 'Calls a function of a template.',
 }
 
 const fact = (term: string, ...value: (Node | string)[]): HTMLElement => h('div', { class: 'fact' }, h('dt', null, term), h('dd', null, ...value))
@@ -32,7 +33,7 @@ const OUTCOME_CAPTION: Record<string, string> = {
   FeeIntentCommit: 'Only the fee went through. The rest of the transaction was aborted.',
 }
 function outcomeFact(v: TxView): HTMLElement {
-  const text = v.outcome ? OUTCOME_CAPTION[v.outcome] : v.rejectedReason ? clip(v.rejectedReason, 240) : 'It has no summary yet, so the network has not settled it.'
+  const text = v.outcome ? OUTCOME_CAPTION[v.outcome] : v.rejectedReason ? clip(v.rejectedReason, 240) : 'It has no summary yet, so this page cannot show its outcome.'
   return fact('Outcome', outcomeLabel(v), caption(text ?? ''))
 }
 
@@ -135,7 +136,7 @@ export function renderStranger(body: HTMLElement, s: Shown): void {
     ),
     h('div', { class: 'actions' }, ...proofLinks(s)),
     ...v.statements.map((st, n) => statement(st, n, v.feePaid)),
-    ...(v.statements.length === 0 ? [h('p', { class: 'empty' }, 'This transaction has no private transfer, so nothing in it is sealed.')] : []),
+    ...(v.statements.length === 0 ? [h('p', { class: 'empty' }, 'This page found no private transfer in this transaction. It does not read inside component calls.')] : []),
   )
 }
 
@@ -179,7 +180,7 @@ function leakItem(l: Leak): HTMLElement {
     h(
       'dd',
       null,
-      ...(shown.length ? shown.map((x) => (l.mono ? hex(x) : h('p', { class: 'val' }, x))) : [h('p', { class: 'val none' }, 'None')]),
+      ...(shown.length ? shown.map((x) => (l.mono ? hex(x) : h('p', { class: 'val' }, x))) : [h('p', { class: 'val none' }, l.empty ?? 'None')]),
       l.values.length > shown.length ? caption(`${l.values.length - shown.length} more not shown. The links in the Stranger card open the whole transaction.`) : null,
       caption(l.caption),
     ),
@@ -233,13 +234,16 @@ export function renderPoltergeist(body: HTMLElement, r: Report): void {
   )
 }
 
-export type Hearing = { kind: 'no-tx' } | { kind: 'no-key' } | { kind: 'silence' } | { kind: 'read'; who: string; readings: Reading[]; all: StealthOutput[] }
+export type Hearing = { kind: 'no-tx' } | { kind: 'no-notes' } | { kind: 'no-key' } | { kind: 'silence' } | { kind: 'read'; who: string; readings: Reading[]; all: StealthOutput[] }
 
 export function renderReading(el: HTMLElement, hearing: Hearing): void {
   clear(el)
   switch (hearing.kind) {
     case 'no-tx':
       el.append(h('p', { class: 'empty' }, 'The medium waits for a transaction. Call one up above.'))
+      break
+    case 'no-notes':
+      el.append(h('p', { class: 'empty' }, 'This transaction has no sealed notes, so there is nothing to listen to.'))
       break
     case 'no-key':
       el.append(h('p', { class: 'empty' }, 'Hand the medium a key and it will listen.'))
@@ -270,6 +274,7 @@ export function renderReading(el: HTMLElement, hearing: Hearing): void {
 /** What the Auditor card shows. `working` is drawn once; `showTally` then moves its bar, so a screen reader hears one announcement, not one per slice. */
 export type Audit =
   | { kind: 'no-tx' }
+  | { kind: 'no-notes' }
   | { kind: 'no-key' }
   | { kind: 'no-proof' }
   | { kind: 'working' }
@@ -285,12 +290,15 @@ export function renderAudit(el: HTMLElement, a: Audit): void {
     case 'no-key':
       el.append(h('p', { class: 'empty' }, 'Hand the auditor a key and it will count.'))
       break
+    case 'no-notes':
+      el.append(h('p', { class: 'empty' }, 'Nothing to count: this transaction has no sealed notes.'))
+      break
     case 'no-proof':
       el.append(h('p', { class: 'empty' }, 'Nothing to count. This token has no audit key, so its notes carry no audit proof. Pick a demo from the group \u201CWith an audit key\u201D.'))
       break
     case 'working':
       el.append(
-        h('div', { class: 'counting' }, h('p', { class: 'quiet' }, 'Counting\u2026'), h('progress', { class: 'tally', max: String(RANGE_MAX), value: '0', 'aria-label': 'Counting the amounts' }), h('p', { class: 'tick', 'aria-hidden': 'true' }), caption('There is no shortcut. The key tries every amount from 0 up, a slice at a time, and the page stays awake in between.')),
+        h('div', { class: 'counting' }, h('p', { class: 'quiet' }, 'Counting\u2026'), h('progress', { class: 'tally', max: String(RANGE_MAX), value: '0', 'aria-label': 'Counting the amounts' }), h('p', { class: 'tick', 'aria-hidden': 'true' }), caption('The key tries every amount from 0 up, a slice at a time, and the page stays awake in between. A precomputed table would be faster; this page has none.')),
       )
       break
     case 'silence':

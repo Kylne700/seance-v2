@@ -48,7 +48,7 @@ const NO_LEAKS = 'Nothing to inspect yet. Call up a transaction above.'
 const AUDIT_NO_TX = 'The auditor waits for a transaction. Call one up above.'
 const AUDIT_NO_PROOF = 'Nothing to count. This token has no audit key'
 const SHUT = 'Memo: shut. The audit key cannot open it.'
-const LEAK_IDS = ['token', 'audit', 'spent', 'created', 'revealed', 'rule', 'times', 'epochs', 'fee', 'length']
+const LEAK_IDS = ['token', 'audit', 'spent', 'created', 'revealed', 'rule', 'times', 'epochs', 'fee', 'length', 'signers']
 // What the page says about where an answer came from. The day is the one on which the recordings were taken (src/data.ts reads it from ledger.json too).
 const SAVED_ON = ledger.recent.capturedAt.slice(0, 10)
 const EXAMPLE_SOURCE = `Recorded: the page's starting example, a copy saved on ${SAVED_ON}. Nothing was asked of the indexer.`
@@ -792,7 +792,7 @@ function poltergeistChecks(s, tag) {
   const shown = s.polt.map((t) => [t.id, ...t.results.map((r) => r.num)])
   check(JSON.stringify(shown) === JSON.stringify(POLT), `${tag}: the Poltergeist shows its five tricks, scored as the tests expect`, shown.map((r) => r.join(' / ')).join('; '))
   check(s.polt.every((t) => t.results.length === 2 && t.results[0].label === 'Transparent ledger synthetic' && t.results[1].label === 'Tari recorded, real'), `${tag}: every result says which ledger it is from: "synthetic" for the transparent one, "recorded, real" for Tari`)
-  check(/^The transparent ledger is synthetic\./.test(s.synthetic ?? '') && /^On the synthetic transparent ledger/.test(s.verdict ?? '') && /On Tari,/.test(s.verdict ?? ''), `${tag}: the page says the transparent ledger is synthetic, and so does the verdict`, s.verdict ?? '')
+  check(/^The transparent ledger is synthetic\./.test(s.synthetic ?? '') && /^On the synthetic transparent ledger/.test(s.verdict ?? '') && /For these \d+ recorded payments,/.test(s.verdict ?? ''), `${tag}: the page says the transparent ledger is synthetic, and so does the verdict`, s.verdict ?? '')
 }
 
 function leaksChecks(s, t, tag) {

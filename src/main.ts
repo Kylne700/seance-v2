@@ -114,6 +114,7 @@ async function hear(): Promise<void> {
   ownHint.textContent = key && 'problem' in key ? key.problem : ''
   let hearing: Hearing
   if (!current) hearing = { kind: 'no-tx' }
+  else if (!current.view.outputs.length) hearing = { kind: 'no-notes' }
   else if (!key || 'problem' in key) hearing = { kind: 'no-key' }
   else {
     const all = current.view.outputs
@@ -132,6 +133,7 @@ async function count(): Promise<void> {
   const radio = auditKeysBox.querySelector<HTMLInputElement>('input[name=audit-key]:checked')
   if (!current) return renderAudit(auditReading, { kind: 'no-tx' })
   const all = current.view.outputs
+  if (!all.length) return renderAudit(auditReading, { kind: 'no-notes' })
   if (!audited(all).length) return renderAudit(auditReading, { kind: 'no-proof' })
   if (!radio) return renderAudit(auditReading, { kind: 'no-key' })
   let started = false

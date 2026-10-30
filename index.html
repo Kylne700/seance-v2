@@ -25,7 +25,7 @@
       <div class="wrap">
         <p class="kicker">Tari Ootle &middot; Esmeralda testnet &middot; Spooky Secrets</p>
         <h1>Seance</h1>
-        <p class="lede">A private payment on Tari is a letter sealed in plain sight. Everyone can pass the envelope around, and only one key opens it. A real one, saved from the testnet, is already on the table below: watch three ghosts try to read it, and see what still leaks to anyone.<span class="online"> Then summon a live transaction or paste any id.</span></p>
+        <p class="lede">A private payment on Tari is a letter sealed in plain sight. Everyone can pass the envelope around, and only the keys it was sealed for open it. A real one, saved from the testnet, is already on the table below: watch three ghosts try to read it, and see what still leaks to anyone.<span class="online"> Then summon a live transaction or paste any id.</span></p>
       </div>
     </header>
 
@@ -162,11 +162,11 @@
               <fieldset class="keys" id="audit-keys" aria-describedby="audit-note">
                 <legend>Whose key does the auditor hold?</legend>
               </fieldset>
-              <p class="hint" id="audit-note">An audit key belongs to the token, not to a person. The token's maker names it once, and from then on every note of the token carries a proof that only that key opens. The demo key is public on purpose, for testnet only.</p>
+              <p class="hint" id="audit-note">An audit key belongs to the token, not to a person. The token's maker names it once, and from then on every note of the token carries an audit proof: the amount encrypted to that key, which only that key opens. The demo key is public on purpose, for testnet only.</p>
               <div class="reading-box" id="audit-reading" role="status" aria-live="polite"></div>
               <details class="maker">
                 <summary>How this token was made: <span id="template-lines"></span> of Rust</summary>
-                <p class="hint">The token's maker names the audit key once, in the line <code>.with_view_key(auditor)</code>. That is all it takes: from then on every note of the token carries a proof that only that key opens. Anyone may mint this token, which is fine for a testnet toy.</p>
+                <p class="hint">The token's maker names the audit key once, in the line <code>.with_view_key(auditor)</code>. That is all it takes: from then on every note of the token carries an audit proof: the amount encrypted to that key, which only that key opens. Anyone may mint this token, which is fine for a testnet toy.</p>
                 <pre class="code" tabindex="0" role="region" aria-label="Source of the token template"><code id="template-code"></code></pre>
                 <div class="actions">
                   <a class="btn ghost" href="https://github.com/Kylne700/seance-v2/blob/main/template/src/lib.rs" target="_blank" rel="noopener noreferrer">The file on GitHub<span class="sr-only"> (opens in a new tab)</span></a>

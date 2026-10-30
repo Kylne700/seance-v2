@@ -202,6 +202,7 @@ describe('the Revenant: tiers, fields and the lines apart from reading', () => {
     expect(t3.here).toContain('No note here carries an audit copy')
     expect(names(empty)).toEqual(['Already public'])
     expect(separate(empty).join(' ')).not.toContain('could be spent')
+    expect(separate(empty).join(' '), 'no commitment here to break').not.toContain('Broken binding')
   })
 
   it('lists the fields this transaction holds, and the audit copy only when a note carries one', () => {

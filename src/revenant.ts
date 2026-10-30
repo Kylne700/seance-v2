@@ -11,7 +11,7 @@ export const SIMULATION =
   "Simulation. We use the demo keys we published in place of a computer that can solve discrete logarithms. Such a computer could be, for example, a large quantum computer running Shor's algorithm; this page does not say when or whether one will exist."
 
 export const INTRO =
-  'Harvest now, decrypt later: everything on the chain is public data, and it can be kept. Suppose a computer that can solve discrete logarithms (for example a large quantum computer) reads what was kept. This is what it would read from this transaction.'
+  'Harvest now, decrypt later: everything on the chain is public data, and it can be kept. Suppose a computer that can solve discrete logarithms (for example a large quantum computer) reads what was kept. This is what it would read from this transaction. This is not special to Tari: any system whose keys rest on elliptic-curve discrete logarithms is exposed to the same kind of kept data.'
 
 const both = (n: number, one: string, many: string): string => (n === 1 ? one : many)
 
@@ -33,7 +33,7 @@ export function tiers(v: TxView): Tier[] {
     },
     {
       n: 2,
-      says: "Chain data plus the recipient's address, posted anywhere (a forum, a donation page, an invoice): every note ever sent to that address can be read, with its amount, blinding factor and memo. The tag and the lock key point to exactly those notes.",
+      says: "Chain data plus the recipient's address, posted anywhere (a forum, a donation page, an invoice): every note ever sent to that address can be read, with its amount, blinding factor and memo. The tag narrows the chain to that address's notes, and the lock key confirms them.",
       here: notes ? `If the address of whoever received ${both(notes, 'this sealed note', `these ${sealed}`)} is posted anywhere, that computer would read ${both(notes, 'its', 'their')} amount, blinding factor and memo, and those of every other note sent to that address.` : 'No sealed note here.',
     },
     {
@@ -59,8 +59,8 @@ export function fields(v: TxView): Field[] {
       { name: 'Commitment', what: 'Hides the amount. A Pedersen commitment, perfectly hiding.', alone: 'Nothing. Every amount fits it with some blinding factor.', withAddress: 'Nothing more from this field.' },
       { name: 'Range proof', what: 'Shows the hidden amount is in range. Bulletproofs+, one for all the notes of a transfer. Its authors prove it perfect honest-verifier zero-knowledge. This page does not read it.', alone: "Nothing. By that proof it adds nothing about the amount, even to an attacker with unlimited power (Tari's code was not audited here).", withAddress: 'Nothing more.' },
       { name: 'Locked message', what: "The amount, blinding factor and memo, encrypted to the recipient's view key. That key is in the recipient's address, not on the chain.", alone: 'Nothing.', withAddress: 'The amount, blinding factor and memo of every note sent to that address, past and future.' },
-      { name: "Sender's one-time key", what: 'Fresh for each note, in the open. The recipient needs it to open the note.', alone: "The sender's secret for that note. It opens nothing without the recipient's view key or account key.", withAddress: 'It is what opens the note.' },
-      { name: 'Tag', what: 'Four bytes, made from the sender secret, the recipient view key and the token. This page does not read it.', alone: 'Nothing.', withAddress: "A fast filter that finds exactly that address's notes." },
+      { name: "Sender's one-time key", what: 'Fresh for each note, in the open. The recipient needs it to open the note.', alone: "The sender's secret for that note. It opens nothing without the recipient's address.", withAddress: 'It is what opens the note.' },
+      { name: 'Tag', what: 'Four bytes, made from the sender secret, the recipient view key and the token. This page does not read it.', alone: 'Nothing.', withAddress: "A fast filter that narrows the chain to that address's notes; the lock key then confirms them." },
     )
   if (v.outputs.some((o) => o.lockKey != null))
     rows.push({ name: 'Lock key', what: "A one-time public key for each note, made from the recipient's account key. The note can be spent with the secret behind it.", alone: 'The one-time secret of each note (see the separate lines below). If the account key is on the chain, it links the note to that account.', withAddress: 'Links every note to that address exactly.' })
@@ -76,7 +76,7 @@ export function separate(v: TxView): string[] {
   const locks = v.outputs.filter((o) => o.lockKey != null).length
   return [
     ...(locks ? [`Notes not yet spent could be spent. ${plural(locks, 'note')} here ${both(locks, 'has', 'have')} a lock key in the open, and that computer could work out the one-time secret behind ${both(locks, 'it', 'each')} (code reading, not tried). Which notes are spent is public: the spend graph shows it.`] : []),
-    'Broken binding. It could open a commitment to any amount, so an opening or a receipt proves nothing after that point. Range proofs fail the same way: it could make one that passes for an amount outside the range.',
+    ...(v.statements.length ? ['Broken binding. It could open a commitment to any amount, so an opening or a receipt proves nothing after that point. Range proofs fail the same way: it could make one that passes for an amount outside the range.'] : []),
     ...(v.signers.length ? [`Signatures. This transaction names ${plural(v.signers.length, 'signer key')} in the open, and that computer could forge a signature for each.`] : []),
   ]
 }

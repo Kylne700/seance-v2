@@ -1,7 +1,8 @@
 // The Auditor lens: count the AMOUNT of a sealed note with a token's audit key, and nothing else. Runs entirely in this page (wasm).
 //
-// A token made with an audit key puts a proof on every note: the amount, encrypted to the audit key (ElGamal). Opening it has no
-// shortcut, so the wasm tries every amount in a range against the proof, a few microseconds each. The search is cut into slices of
+// A token made with an audit key puts a proof on every note: the amount, encrypted to the audit key (ElGamal). Opening it here
+// is a search: this page has no lookup table (a table would be faster), so the wasm tries every amount in a range against the proof, under 100
+// microseconds each (smoke test: the first demo's 50,000 tries took 3993 ms in all). The search is cut into slices of
 // about SLICE_MS and the page is handed back between slices, so it never freezes and can show progress.
 // The audit key never touches the message (the memo): that is locked to the recipient's own view key, and this module never tries.
 import { fromHexStr } from '@tari-project/ootle'
