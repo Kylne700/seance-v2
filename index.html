@@ -25,7 +25,7 @@
       <div class="wrap">
         <p class="kicker">Tari Ootle &middot; Esmeralda testnet &middot; Spooky Secrets</p>
         <h1>Seance</h1>
-        <p class="lede">A private payment on Tari is a letter sealed in plain sight. Everyone can pass the envelope around, and only one key opens it. A real one, saved from the testnet, is already on the table below: watch three ghosts try to read it, and see what still leaks to anyone. Then summon a live transaction or paste any id.</p>
+        <p class="lede">A private payment on Tari is a letter sealed in plain sight. Everyone can pass the envelope around, and only one key opens it. A real one, saved from the testnet, is already on the table below: watch three ghosts try to read it, and see what still leaks to anyone.<span class="online"> Then summon a live transaction or paste any id.</span></p>
       </div>
     </header>
 
@@ -34,14 +34,14 @@
         <h2 id="picker-h">Call up a transaction</h2>
         <div class="picker-cols">
           <form id="pick" autocomplete="off" novalidate>
-            <label for="txid">Transaction id</label>
-            <div class="row">
+            <label for="txid" class="online">Transaction id</label>
+            <div class="row online">
               <input id="txid" name="txid" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" placeholder="64 hexadecimal characters" aria-describedby="txid-hint" />
               <button class="btn primary" type="submit" id="look" disabled aria-disabled="true">Look at it</button>
             </div>
-            <p class="hint" id="txid-hint">Any transaction on the Esmeralda test network. The page looks for the id in the indexer's list of latest transactions first, and that request carries no id. An id that is not in the list is asked for by id only if you say so. A demo you pick or paste is asked for by id. The links beside an answer open another site, which is then told the id.</p>
+            <p class="hint online" id="txid-hint">Any transaction on the Esmeralda test network. The page looks for the id in the indexer's list of latest transactions first, and that request carries no id. An id that is not in the list is asked for by id only if you say so. A demo you pick or paste is asked for by id. The links beside an answer open another site, which is then told the id.</p>
             <div class="row">
-              <button class="btn ghost" type="button" id="summon" aria-disabled="true">Summon a recent transaction</button>
+              <button class="btn ghost online" type="button" id="summon" aria-disabled="true">Summon a recent transaction</button>
               <button class="btn ghost" type="button" id="open-file" aria-disabled="true">Open a saved transaction file</button>
               <input type="file" id="file" accept=".json,application/json" hidden />
             </div>
@@ -53,17 +53,18 @@
               <select id="demo" name="demo"></select>
               <button class="btn primary" type="button" id="hold" aria-disabled="true">Hold the seance</button>
             </div>
-            <p class="hint">These are public transactions from our own test account, so the page asks the indexer for them by id.</p>
+            <p class="hint online">These are public transactions from our own test account, so the page asks the indexer for them by id.</p>
+            <p class="hint offline-only">These are public transactions from our own test account. Their saved copies are inside this file.</p>
           </div>
         </div>
 
         <div class="modebar">
           <span class="badge live" id="mode-badge">Live</span>
           <span id="mode-text" class="mode-text"></span>
-          <button class="btn ghost small" type="button" id="mode-switch" aria-pressed="false" aria-disabled="true">Use recorded data</button>
+          <button class="btn ghost small online" type="button" id="mode-switch" aria-pressed="false" aria-disabled="true">Use recorded data</button>
         </div>
         <p class="status info" id="status" role="status" aria-live="polite">The page's code is still loading. The buttons wake up when it is ready.</p>
-        <div class="row" id="ask" hidden>
+        <div class="row online" id="ask" hidden>
           <button class="btn primary small" type="button" id="ask-anyway">Ask for it anyway</button>
           <button class="btn ghost small" type="button" id="ask-file">Open a saved transaction file</button>
         </div>

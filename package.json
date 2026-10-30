@@ -19,7 +19,8 @@
     "links": "node scripts/links.mjs",
     "scan": "node scripts/scan.mjs",
     "licenses": "node scripts/licenses.mjs",
-    "demo": "node scripts/make-demo.mjs"
+    "demo": "node scripts/make-demo.mjs",
+    "offline": "node scripts/build-offline.mjs"
   },
   "dependencies": {
     "@tari-project/ootle": "0.9.0",

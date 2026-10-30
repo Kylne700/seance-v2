@@ -29,8 +29,8 @@ const isText = (buf) => !buf.subarray(0, 4000).includes(0)
 // (every run of printable characters on its own line, so the grep counts below are per run).
 const inlinedWasm = (dir) =>
   walk(dir)
-    .filter((f) => f.endsWith('.js'))
-    .flatMap((f) => [...readFileSync(f, 'latin1').matchAll(/atob\((["'`])([A-Za-z0-9+/=]{1000,})\1\)/g)])
+    .filter((f) => f.endsWith('.js') || f.endsWith('.html')) // the offline copy carries the same bundle inside one .html
+    .flatMap((f) => [...readFileSync(f, 'latin1').replaceAll('\\\n', '').matchAll(/atob\((["'`])([A-Za-z0-9+/=]{1000,})\1\)/g)]) // the offline copy cuts the string with backslash-newline (scripts/build-offline.mjs)
     .map((m) => Buffer.from(m[2], 'base64').toString('latin1').replace(/[^\x20-\x7e]+/g, '\n'))
 const wasm = existsSync(join(APP, 'dist')) ? inlinedWasm(join(APP, 'dist')) : []
 
