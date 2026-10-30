@@ -1,0 +1,2 @@
+# The offline copy is a build output whose policy names the hash of its own script: git must never rewrite its line endings (autocrlf), and a diff of one 1.9 MB file is not worth printing.
+public/seance-offline.html binary

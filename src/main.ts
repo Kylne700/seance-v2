@@ -48,6 +48,9 @@ for (const type of ['navigation', 'resource']) new PerformanceObserver((list) =>
 for (const k of Object.values(demoKeys)) netlog.watch(k.viewSecret)
 
 const data = createData()
+// The single-file offline copy (scripts/build-offline.mjs marks <html class="offline"> and its CSP blocks the page's requests): recorded data only, from the first line on.
+const offline = document.documentElement.classList.contains('offline')
+if (offline) data.setMode('recorded')
 let current: Shown | null = null
 let fileMark = 0 // when the file now on the table was opened, on the log's clock
 let pending = '' // the id the visitor was just told is not in the list
@@ -68,9 +71,9 @@ function setStatus(text: string, kind: 'info' | 'warn' | 'error' = 'info'): void
 function reflectMode(): void {
   const recorded = data.mode === 'recorded'
   const file = current?.mode === 'file'
-  modeBadge.textContent = file ? 'File' : recorded ? 'Recorded' : 'Live'
+  modeBadge.textContent = file ? 'File' : offline ? 'Offline' : recorded ? 'Recorded' : 'Live'
   modeBadge.className = `badge ${file ? 'file' : data.mode}`
-  modeText.textContent = file ? 'Showing a file you opened. Nothing was asked of any server for it.' : recorded ? 'Replaying answers saved earlier. This page does not ask the indexer. Press the button again to go back to live data.' : 'Asking the Esmeralda indexer. The requests this page made are listed below.'
+  modeText.textContent = offline ? 'Offline copy: open a saved transaction file.' : file ? 'Showing a file you opened. Nothing was asked of any server for it.' : recorded ? 'Replaying answers saved earlier. This page does not ask the indexer. Press the button again to go back to live data.' : 'Asking the Esmeralda indexer. The requests this page made are listed below.'
   modeSwitch.setAttribute('aria-pressed', String(recorded))
 }
 
@@ -150,6 +153,7 @@ function describe(s: Shown): string {
   if (s.quietChain) return `The latest live transactions held no private transfer, so this one is recorded. ${what}`
   const kind = demos.find((d) => d.id === s.view.id)?.kind
   const about = kind === 'audited' ? ' Paid in the demo token SEANCE, which has an audit key. The Medium, with the recipient\'s key, opens one note (amount and memo). The Auditor, with the audit key, counts the amount of both and cannot read a memo.' : kind === 'revealed' ? " This sender revealed the amount on purpose, so there is nothing sealed to read: compare the Stranger's view with the other demos." : ''
+  if (s.preview && offline) return 'A saved example is on the table, so the three ghosts have something to read. Open a saved transaction file to read your own.'
   if (s.preview) return 'A saved example is on the table, so the three ghosts have something to read. Nothing has been asked of the indexer yet: summon a recent transaction to read a live one, or paste any id.'
   if (s.forgotten) return `The public indexer no longer holds this transaction, so this is the copy saved on ${savedOn}. Anything you paste is still looked up live. ${what}${about}`
   if (s.list) return `${s.list.found ? `Found in the indexer's latest ${plural(s.list.size, 'transaction')}, so the indexer was not asked for this id.` : `Summon downloaded the indexer's latest ${plural(s.list.size, 'transaction')} and picked this one in your browser. The indexer saw your IP address, the time and the request for the list, and no id.`} ${what}`
@@ -294,7 +298,7 @@ renderNet()
 renderPoltergeist($('polt-body'), poltergeist(recordedWorld())) // recorded data only: the same numbers on every visit
 $('template-code').textContent = templateSource
 $('template-lines').textContent = plural(templateSource.trimEnd().split('\n').length, 'line')
-const fromHash = txFromHash(location.hash)
+const fromHash = offline ? null : txFromHash(location.hash) // the offline copy has no way to look an id up
 if (fromHash) {
   renderStrangerEmpty(strangerBody)
   renderLeaks(leaksBody, null)

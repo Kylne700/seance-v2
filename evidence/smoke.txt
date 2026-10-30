@@ -1,7 +1,7 @@
-Seance smoke test of dist/ at http://127.0.0.1:4273/seance-v2/, 2026-10-29T20:35:13.057Z, Chrome/154.0.8037.92
+Seance smoke test of dist/ at http://127.0.0.1:4391/seance-v2/, 2026-10-30T12:06:32.566Z, Chrome/154.0.8037.92
 
 == the built files
-ok   build: every asset path starts with /seance-v2/assets/ (the script and the style sheet), and the icon is the relative ./favicon.svg  [./favicon.svg /seance-v2/assets/index-DHG_EKRM.js /seance-v2/assets/index-hepVE_6I.css]
+ok   build: every asset path starts with /seance-v2/assets/ (the script and the style sheet), and the icon is the relative ./favicon.svg  [./favicon.svg /seance-v2/assets/index-Bhcoqzbq.js /seance-v2/assets/index-DgP2Sopo.css]
 ok   build: no inline script or style in index.html
 ok   build: no gate page shipped; third-party licence notices and favicon are
 ok   build: every host named in the built files is expected (esme-indexer-a.ootle.tari.com, explorer.tari.mw, esme-indexer-b.ootle.tari.com, raw.githubusercontent.com, ootle-indexer-a.tari.com, www.w3.org, kylne700.github.io, github.com, ootle.tari.com); the w3.org one is the SVG namespace in the favicon, the github.io one is this site's own address in the preview tags
@@ -45,23 +45,23 @@ ok   live 1280px landing: nothing sticks out of the viewport
 ok   live 1280px landing: no clipped text
 ok   live 1280px landing: all 33 tap targets are at least 44x44 px
 ok   live 1280px landing: the three lens cards are side by side  [72,1051 w363 | 459,1051 w363 | 845,1051 w363]
-ok   axe live 1280px landing: 0 violations  [46 rules passed; needs-review: color-contrast x17]
-ok   live 1280px: "Summon" shows a transaction id (fe5022d037...), in the id field and the address
+ok   axe live 1280px landing: 0 violations  [46 rules passed; needs-review: color-contrast x18]
+ok   live 1280px: "Summon" shows a transaction id (6bf724b525...), in the id field and the address
 ok   live 1280px: the Stranger says where the data came from  [Live: picked in your browser from the indexer's latest 40 transactions. The indexer was not asked for this id.]
-ok   live 1280px: the 10 s step took 325 ms
-ok   live 1280px: after "Summon": the Stranger's links fit a live answer (the explorer) for this very id and open safely  [https://explorer.tari.mw/tx/fe5022d037e34719a915541bbde7a305eb3249f3e13acc8e16d3111f3042a483]
-ok   live 1280px: after "Summon": the Medium card has its own link for the same id  [Open in the explorer (opens in a new tab) https://explorer.tari.mw/tx/fe5022d037e34719a915541bbde7a305eb3249f3e13acc8e16d3111f3042a483]
+ok   live 1280px: the 10 s step took 333 ms
+ok   live 1280px: after "Summon": the Stranger's links fit a live answer (the explorer) for this very id and open safely  [https://explorer.tari.mw/tx/6bf724b525bca225af6f6ba67069ab35676e266c1d459978c74ea84340d33e51]
+ok   live 1280px: after "Summon": the Medium card has its own link for the same id  [Open in the explorer (opens in a new tab) https://explorer.tari.mw/tx/6bf724b525bca225af6f6ba67069ab35676e266c1d459978c74ea84340d33e51]
 ok   live 1280px: "Summon" made one request, for the list of latest transactions, and none for an id: the page picked in the browser  [Live: picked in your browser from the indexer's latest 40 transactions. The indexer was not asked for this id. | 1 list, 0 by id]
 ok   live 1280px: Summon shows a stranger's transaction, or says it is one of ours  [stranger]
-ok   live 1280px: sealed notes are open by default (1)
+ok   live 1280px: sealed notes are open by default (2)
 ok   live 1280px: bob's key, still in hand from the first screen, hears nothing in a stranger's transaction ("The spirits are quiet.")  [bob | The spirits are quiet. | null]
 ok   live 1280px: the Auditor has nothing to count in it: no audit proof on this transaction, or a proof that is not for this key  [Nothing to count. This token has no audit key, so its notes carry no audit proof. Pick a demo from the group “With an audit key”.]
 ok   live 1280px: the leaks panel lists what this transaction leaves public  [token,audit,spent,created,revealed,rule,times,epochs,fee,length]
 ok   live 1280px: the answer is on screen without scrolling by hand: the Stranger card starts in the upper half  [top 16px of 800px, scrollY 1035]
 ok   live 1280px: pasting that id finds it in the list the page already holds: no request at all, none for the id  [Live: found in the indexer's latest 40 transactions, so the indexer was not asked for this id. | 1 list, 0 by id]
 ok   live 1280px: the status line says the same  [Found in the indexer's latest 40 transactions, so the indexer was not asked for this id. S]
-ok   live 1280px: an id found in the list: the Stranger's links fit a live answer (the explorer) for this very id and open safely  [https://explorer.tari.mw/tx/fe5022d037e34719a915541bbde7a305eb3249f3e13acc8e16d3111f3042a483]
-ok   live 1280px: an id found in the list: the Medium card has its own link for the same id  [Open in the explorer (opens in a new tab) https://explorer.tari.mw/tx/fe5022d037e34719a915541bbde7a305eb3249f3e13acc8e16d3111f3042a483]
+ok   live 1280px: an id found in the list: the Stranger's links fit a live answer (the explorer) for this very id and open safely  [https://explorer.tari.mw/tx/6bf724b525bca225af6f6ba67069ab35676e266c1d459978c74ea84340d33e51]
+ok   live 1280px: an id found in the list: the Medium card has its own link for the same id  [Open in the explorer (opens in a new tab) https://explorer.tari.mw/tx/6bf724b525bca225af6f6ba67069ab35676e266c1d459978c74ea84340d33e51]
 ok   live 1280px: a pasted demo id is asked for by id, as in v1 (our own public transaction)
 ok   live 1280px: a pasted id shows that transaction (live: read from the indexer, or the saved copy if the indexer dropped it)  [Recorded: the public indexer no longer holds this transaction, so this is the copy saved on 2026-10-20.]
 ok   live 1280px: a pasted id: the Stranger's links fit a saved copy (the second indexer's receipt, ledger.json, the first indexer's receipt) for this very id and open safely  [https://esme-indexer-b.ootle.tari.com/transaction-receipts/80a13d44a497870e01bdf42af626633c792f3df1f6fb802da884f37991dc0125 | https://raw.githubusercontent.com/Kylne700/seance-v2/main/ledger.json | https://esme-indexer-a.ootle.tari.com/transaction-receipts/80a13d44a497870e01bdf42af626633c792f3df1f6fb802da884f37991dc0125]
@@ -105,9 +105,9 @@ ok   live 1280px demo 1: Bob's key: reads 0.00031415 SEANCE “Midnight at the o
 ok   live 1280px demo 1: the leaks panel lists its 10 items in order, for the transaction on show  [token,audit,spent,created,revealed,rule,times,epochs,fee,length]
 ok   live 1280px demo 1: the panel's token, audit proofs, amounts in the open and fee are this transaction's
 ok   live 1280px demo 1: the spent notes in the panel are the ones the Stranger's card shows (1)
-ok   live 1280px demo 1: while it counts, the Auditor shows a progress bar and the count so far (61 updates)  [[{"value":128,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 128 tried","motion":"none/0s"},{"value":661,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 661 tried","motion":"none/0s"}]]
+ok   live 1280px demo 1: while it counts, the Auditor shows a progress bar and the count so far (64 updates)  [[{"value":128,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 128 tried","motion":"none/0s"},{"value":824,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 824 tried","motion":"none/0s"}]]
 ok   live 1280px demo 1: the "Counting…" card is drawn once, so a screen reader hears it once and not once per slice  [1]
-ok   live 1280px demo 1: the page never froze for 100 ms while the audit key counted (2117 ms in all; 0 tasks of 50 ms or more)
+ok   live 1280px demo 1: the page never froze for 100 ms while the audit key counted (2210 ms in all; 0 tasks of 50 ms or more)
 ok   live 1280px demo 1: bob's key in the Auditor: silence ("The spirits are quiet."), no amount shown  [The spirits are quiet.
 
 This is not the token’s audit key, so the proofs stay sh]
@@ -137,13 +137,13 @@ ok   live 1280px loaded: nothing sticks out of the viewport
 ok   live 1280px loaded: no clipped text
 ok   live 1280px loaded: all 31 tap targets are at least 44x44 px
 ok   live 1280px loaded: the three lens cards are side by side  [72,1051 w363 | 459,1051 w363 | 845,1051 w363]
-ok   axe live 1280px loaded (Bob reads demo 5, no audit key): 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe live 1280px loaded (Bob reads demo 5, no audit key): 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   live 1280px all three ghosts at work: no horizontal scroll  [1280 <= 1280]
 ok   live 1280px all three ghosts at work: nothing sticks out of the viewport
 ok   live 1280px all three ghosts at work: no clipped text
 ok   live 1280px all three ghosts at work: all 33 tap targets are at least 44x44 px
 ok   live 1280px all three ghosts at work: the three lens cards are side by side  [72,1076 w363 | 459,1076 w363 | 845,1076 w363]
-ok   axe live 1280px all three ghosts at work (demo 1): 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe live 1280px all three ghosts at work (demo 1): 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   live 1280px: Bob's key opens one of the two notes of demo 1, and the caption says "The other sealed note stays shut", not "The other 1"  [h Bob's key. The key was not sent anywhere. The other sealed note stays shut for this key.]
 ok   live 1280px: all 25 Tab stops show the yellow 3 px outline and are on screen
 ok   live 1280px: Tab order follows the page: skip link, id field, buttons (the file button too), mode switch, the ghost log, Stranger's proof links, keys, own key, Medium's proof link, the Auditor's keys, the template card, footer  [a "Skip=0 input#txid=1 button#look=2 button#summon=3 button#open-file=4 select#demo=5 button#hold=6 button#mode-switch=7 summary "The requests=8 a "Receipt from the second=9 a "The saved copy=10 a "Receipt from the first=11 input[key==18 input#own-key=19 a "Receipt from the second=20 input[audit-key==21 summary "How this token was made=22 a "Tari Ootle explorer=23 a "Tari Ootle docs=24]
@@ -157,7 +157,7 @@ ok   live 1280px with the template card opened: nothing sticks out of the viewpo
 ok   live 1280px with the template card opened: no clipped text
 ok   live 1280px with the template card opened: all 33 tap targets are at least 44x44 px
 ok   live 1280px with the template card opened: the three lens cards are side by side  [72,1076 w363 | 459,1076 w363 | 845,1076 w363]
-ok   axe live 1280px with the template card opened: 0 violations  [48 rules passed; needs-review: color-contrast x17]
+ok   axe live 1280px with the template card opened: 0 violations  [48 rules passed; needs-review: color-contrast x18]
 ok   live 1280px: Tab goes from the title to the code and the two links, each with the yellow 3 px outline and on screen  [pre solid 3 true; a "The file on GitHub (open" solid 3 true; a#token-link "The token on the explore" solid 3 true]
 ok   live 1280px: an id outside the indexer's list gets one line and two buttons ("Ask for it anyway", "Open a saved transaction file")  [Live: This id is not among the indexer's latest 40 transactions. Asking the indexer for it by id | Ask for it anyway|Open a saved transaction file]
 ok   live 1280px: and the indexer has not been asked for that id (0 new list request, 0 for the id)  [8 by id]
@@ -166,7 +166,7 @@ ok   live 1280px with the prompt showing: nothing sticks out of the viewport
 ok   live 1280px with the prompt showing: no clipped text
 ok   live 1280px with the prompt showing: all 25 tap targets are at least 44x44 px
 ok   live 1280px with the prompt showing: the three lens cards are side by side  [72,1107 w363 | 459,1107 w363 | 845,1107 w363]
-ok   axe live 1280px with the prompt showing: 0 violations  [48 rules passed; needs-review: color-contrast x18]
+ok   axe live 1280px with the prompt showing: 0 violations  [48 rules passed; needs-review: color-contrast x19]
 ok   live 1280px: "Ask for it anyway" asks the indexer for exactly that id, once; the real indexer's "not found" comes back with the reason, and the page stays live  [Live: The indexer does not know this transaction id on Esmeralda. The public indexer drops old history, so an old id may be gone.]
 ok   live 1280px: the only console line it caused is the browser's own note about the indexer's 404  [Failed to load resource: the server responded with a status of 404 ()]
 ok   live 1280px: after "not found" the next lookup still works, and the page is still live (the indexer's answer, or the saved copy if it dropped this one)  [Recorded: the public indexer no longer holds this transaction, so this is the copy saved on 2026-10-20.]
@@ -200,23 +200,23 @@ ok   live 375px landing: nothing sticks out of the viewport
 ok   live 375px landing: no clipped text
 ok   live 375px landing: all 33 tap targets are at least 44x44 px
 ok   live 375px landing: the three lens cards are stacked  [16,1829 w343 | 16,3321 w343 | 16,4278 w343]
-ok   axe live 375px landing: 0 violations  [46 rules passed; needs-review: color-contrast x17]
-ok   live 375px: "Summon" shows a transaction id (fe5022d037...), in the id field and the address
+ok   axe live 375px landing: 0 violations  [46 rules passed; needs-review: color-contrast x18]
+ok   live 375px: "Summon" shows a transaction id (3f71a823ed...), in the id field and the address
 ok   live 375px: the Stranger says where the data came from  [Live: picked in your browser from the indexer's latest 40 transactions. The indexer was not asked for this id.]
-ok   live 375px: the 10 s step took 114 ms
-ok   live 375px: after "Summon": the Stranger's links fit a live answer (the explorer) for this very id and open safely  [https://explorer.tari.mw/tx/fe5022d037e34719a915541bbde7a305eb3249f3e13acc8e16d3111f3042a483]
-ok   live 375px: after "Summon": the Medium card has its own link for the same id  [Open in the explorer (opens in a new tab) https://explorer.tari.mw/tx/fe5022d037e34719a915541bbde7a305eb3249f3e13acc8e16d3111f3042a483]
+ok   live 375px: the 10 s step took 123 ms
+ok   live 375px: after "Summon": the Stranger's links fit a live answer (the explorer) for this very id and open safely  [https://explorer.tari.mw/tx/3f71a823ed81f661ebad8178629f0635d463a815a7b161943da04b0f317abdfe]
+ok   live 375px: after "Summon": the Medium card has its own link for the same id  [Open in the explorer (opens in a new tab) https://explorer.tari.mw/tx/3f71a823ed81f661ebad8178629f0635d463a815a7b161943da04b0f317abdfe]
 ok   live 375px: "Summon" made one request, for the list of latest transactions, and none for an id: the page picked in the browser  [Live: picked in your browser from the indexer's latest 40 transactions. The indexer was not asked for this id. | 1 list, 0 by id]
 ok   live 375px: Summon shows a stranger's transaction, or says it is one of ours  [stranger]
-ok   live 375px: sealed notes are closed by default (1)
+ok   live 375px: sealed notes are closed by default (2)
 ok   live 375px: bob's key, still in hand from the first screen, hears nothing in a stranger's transaction ("The spirits are quiet.")  [bob | The spirits are quiet. | null]
 ok   live 375px: the Auditor has nothing to count in it: no audit proof on this transaction, or a proof that is not for this key  [Nothing to count. This token has no audit key, so its notes carry no audit proof. Pick a demo from the group “With an audit key”.]
 ok   live 375px: the leaks panel lists what this transaction leaves public  [token,audit,spent,created,revealed,rule,times,epochs,fee,length]
 ok   live 375px: the answer is on screen without scrolling by hand: the Stranger card was scrolled to the top  [top 16px of 800px, scrollY 1864]
 ok   live 375px: pasting that id finds it in the list the page already holds: no request at all, none for the id  [Live: found in the indexer's latest 40 transactions, so the indexer was not asked for this id. | 1 list, 0 by id]
 ok   live 375px: the status line says the same  [Found in the indexer's latest 40 transactions, so the indexer was not asked for this id. S]
-ok   live 375px: an id found in the list: the Stranger's links fit a live answer (the explorer) for this very id and open safely  [https://explorer.tari.mw/tx/fe5022d037e34719a915541bbde7a305eb3249f3e13acc8e16d3111f3042a483]
-ok   live 375px: an id found in the list: the Medium card has its own link for the same id  [Open in the explorer (opens in a new tab) https://explorer.tari.mw/tx/fe5022d037e34719a915541bbde7a305eb3249f3e13acc8e16d3111f3042a483]
+ok   live 375px: an id found in the list: the Stranger's links fit a live answer (the explorer) for this very id and open safely  [https://explorer.tari.mw/tx/3f71a823ed81f661ebad8178629f0635d463a815a7b161943da04b0f317abdfe]
+ok   live 375px: an id found in the list: the Medium card has its own link for the same id  [Open in the explorer (opens in a new tab) https://explorer.tari.mw/tx/3f71a823ed81f661ebad8178629f0635d463a815a7b161943da04b0f317abdfe]
 ok   live 375px: a pasted demo id is asked for by id, as in v1 (our own public transaction)
 ok   live 375px: a pasted id shows that transaction (live: read from the indexer, or the saved copy if the indexer dropped it)  [Recorded: the public indexer no longer holds this transaction, so this is the copy saved on 2026-10-20.]
 ok   live 375px: a pasted id: the Stranger's links fit a saved copy (the second indexer's receipt, ledger.json, the first indexer's receipt) for this very id and open safely  [https://esme-indexer-b.ootle.tari.com/transaction-receipts/80a13d44a497870e01bdf42af626633c792f3df1f6fb802da884f37991dc0125 | https://raw.githubusercontent.com/Kylne700/seance-v2/main/ledger.json | https://esme-indexer-a.ootle.tari.com/transaction-receipts/80a13d44a497870e01bdf42af626633c792f3df1f6fb802da884f37991dc0125]
@@ -258,9 +258,9 @@ ok   live 375px demo 1: Bob's key: reads 0.00031415 SEANCE “Midnight at the ol
 ok   live 375px demo 1: the leaks panel lists its 10 items in order, for the transaction on show  [token,audit,spent,created,revealed,rule,times,epochs,fee,length]
 ok   live 375px demo 1: the panel's token, audit proofs, amounts in the open and fee are this transaction's
 ok   live 375px demo 1: the spent notes in the panel are the ones the Stranger's card shows (1)
-ok   live 375px demo 1: while it counts, the Auditor shows a progress bar and the count so far (62 updates)  [[{"value":128,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 128 tried","motion":"none/0s"},{"value":795,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 795 tried","motion":"none/0s"}]]
+ok   live 375px demo 1: while it counts, the Auditor shows a progress bar and the count so far (66 updates)  [[{"value":128,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 128 tried","motion":"none/0s"},{"value":824,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 824 tried","motion":"none/0s"}]]
 ok   live 375px demo 1: the "Counting…" card is drawn once, so a screen reader hears it once and not once per slice  [1]
-ok   live 375px demo 1: the page never froze for 100 ms while the audit key counted (2112 ms in all; 0 tasks of 50 ms or more)
+ok   live 375px demo 1: the page never froze for 100 ms while the audit key counted (2296 ms in all; 0 tasks of 50 ms or more)
 ok   live 375px demo 1: bob's key in the Auditor: silence ("The spirits are quiet."), no amount shown  [The spirits are quiet.
 
 This is not the token’s audit key, so the proofs stay sh]
@@ -283,20 +283,20 @@ ok   live 375px loaded: nothing sticks out of the viewport
 ok   live 375px loaded: no clipped text
 ok   live 375px loaded: all 31 tap targets are at least 44x44 px
 ok   live 375px loaded: the three lens cards are stacked  [16,1829 w343 | 16,3386 w343 | 16,4343 w343]
-ok   axe live 375px loaded (Bob reads demo 5, no audit key): 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe live 375px loaded (Bob reads demo 5, no audit key): 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   live 375px all three ghosts at work: no horizontal scroll  [375 <= 375]
 ok   live 375px all three ghosts at work: nothing sticks out of the viewport
 ok   live 375px all three ghosts at work: no clipped text
 ok   live 375px all three ghosts at work: all 33 tap targets are at least 44x44 px
 ok   live 375px all three ghosts at work: the three lens cards are stacked  [16,1982 w343 | 16,3475 w343 | 16,4432 w343]
-ok   axe live 375px all three ghosts at work (demo 1): 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe live 375px all three ghosts at work (demo 1): 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   live 375px: Bob's key opens one of the two notes of demo 1, and the caption says "The other sealed note stays shut", not "The other 1"  [h Bob's key. The key was not sent anywhere. The other sealed note stays shut for this key.]
 ok   live 375px with every note, audit proof and ciphertext opened: no horizontal scroll  [375 <= 375]
 ok   live 375px with every note, audit proof and ciphertext opened: nothing sticks out of the viewport
 ok   live 375px with every note, audit proof and ciphertext opened: no clipped text
 ok   live 375px with every note, audit proof and ciphertext opened: all 33 tap targets are at least 44x44 px
 ok   live 375px with every note, audit proof and ciphertext opened: the three lens cards are stacked  [16,1982 w343 | 16,6299 w343 | 16,7256 w343]
-ok   axe live 375px with every note, audit proof and ciphertext opened: 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe live 375px with every note, audit proof and ciphertext opened: 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   live 375px: all 25 Tab stops show the yellow 3 px outline and are on screen
 ok   live 375px: Tab order follows the page: skip link, id field, buttons (the file button too), mode switch, the ghost log, Stranger's proof links, keys, own key, Medium's proof link, the Auditor's keys, the template card, footer  [a "Skip=0 input#txid=1 button#look=2 button#summon=3 button#open-file=4 select#demo=5 button#hold=6 button#mode-switch=7 summary "The requests=8 a "Receipt from the second=9 a "The saved copy=10 a "Receipt from the first=11 input[key==18 input#own-key=19 a "Receipt from the second=20 input[audit-key==21 summary "How this token was made=22 a "Tari Ootle explorer=23 a "Tari Ootle docs=24]
 ok   live 375px: the template card is closed and its title counts the real lines of the file (34)  [How this token was made: 34 lines of Rust]
@@ -309,7 +309,7 @@ ok   live 375px with the template card opened: nothing sticks out of the viewpor
 ok   live 375px with the template card opened: no clipped text
 ok   live 375px with the template card opened: all 33 tap targets are at least 44x44 px
 ok   live 375px with the template card opened: the three lens cards are stacked  [16,1982 w343 | 16,6299 w343 | 16,7256 w343]
-ok   axe live 375px with the template card opened: 0 violations  [48 rules passed; needs-review: color-contrast x17]
+ok   axe live 375px with the template card opened: 0 violations  [48 rules passed; needs-review: color-contrast x18]
 ok   live 375px: Tab goes from the title to the code and the two links, each with the yellow 3 px outline and on screen  [pre solid 3 true; a "The file on GitHub (open" solid 3 true; a#token-link "The token on the explore" solid 3 true]
 ok   live 375px: an id outside the indexer's list gets one line and two buttons ("Ask for it anyway", "Open a saved transaction file")  [Live: This id is not among the indexer's latest 40 transactions. Asking the indexer for it by id | Ask for it anyway|Open a saved transaction file]
 ok   live 375px: and the indexer has not been asked for that id (0 new list request, 0 for the id)  [6 by id]
@@ -318,7 +318,7 @@ ok   live 375px with the prompt showing: nothing sticks out of the viewport
 ok   live 375px with the prompt showing: no clipped text
 ok   live 375px with the prompt showing: all 25 tap targets are at least 44x44 px
 ok   live 375px with the prompt showing: the three lens cards are stacked  [16,1915 w343 | 16,2139 w343 | 16,2893 w343]
-ok   axe live 375px with the prompt showing: 0 violations  [48 rules passed; needs-review: color-contrast x18]
+ok   axe live 375px with the prompt showing: 0 violations  [48 rules passed; needs-review: color-contrast x19]
 ok   live 375px: "Ask for it anyway" asks the indexer for exactly that id, once; the real indexer's "not found" comes back with the reason, and the page stays live  [Live: The indexer does not know this transaction id on Esmeralda. The public indexer drops old history, so an old id may be gone.]
 ok   live 375px: the only console line it caused is the browser's own note about the indexer's 404  [Failed to load resource: the server responded with a status of 404 ()]
 ok   live 375px: after "not found" the next lookup still works, and the page is still live (the indexer's answer, or the saved copy if it dropped this one)  [Recorded: the public indexer no longer holds this transaction, so this is the copy saved on 2026-10-20.]
@@ -355,12 +355,12 @@ ok   recorded 1280px landing: nothing sticks out of the viewport
 ok   recorded 1280px landing: no clipped text
 ok   recorded 1280px landing: all 33 tap targets are at least 44x44 px
 ok   recorded 1280px landing: the three lens cards are side by side  [72,1051 w363 | 459,1051 w363 | 845,1051 w363]
-ok   axe recorded 1280px landing: 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe recorded 1280px landing: 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   recorded 1280px: the manual switch turns recorded mode on and says so
-ok   axe recorded 1280px landing after the switch: 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe recorded 1280px landing after the switch: 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   recorded 1280px: "Summon" shows a transaction id (3d1ef4e5bc...), in the id field and the address
 ok   recorded 1280px: the Stranger says where the data came from  [Recorded: a saved copy of the indexer's answer, taken on 2026-10-20.]
-ok   recorded 1280px: the 10 s step took 26 ms
+ok   recorded 1280px: the 10 s step took 28 ms
 ok   recorded 1280px: after "Summon": the Stranger's links fit a saved copy (the second indexer's receipt, ledger.json, the first indexer's receipt) for this very id and open safely  [https://esme-indexer-b.ootle.tari.com/transaction-receipts/3d1ef4e5bcc6e27963d6f11a73604f03df15c7e06fa74b510953f4798f0848f0 | https://raw.githubusercontent.com/Kylne700/seance-v2/main/ledger.json | https://esme-indexer-a.ootle.tari.com/transaction-receipts/3d1ef4e5bcc6e27963d6f11a73604f03df15c7e06fa74b510953f4798f0848f0]
 ok   recorded 1280px: after "Summon": the Medium card has its own link for the same id  [Receipt from the second public indexer (opens in a new tab) https://esme-indexer-b.ootle.tari.com/transaction-receipts/3d1ef4e5bcc6e27963d6f11a73604f03df15c7e06fa74b510953f4798f0848f0]
 ok   recorded 1280px: Summon from the recorded sample never serves one of ours
@@ -429,9 +429,9 @@ ok   recorded 1280px demo 1: the leaks panel lists its 10 items in order, for th
 ok   recorded 1280px demo 1: the panel's token, audit proofs, amounts in the open and fee are this transaction's
 ok   recorded 1280px demo 1: the spent notes in the panel are the ones the Stranger's card shows (1)
 ok   recorded 1280px demo 1: the Stranger's card, audit proofs included, is word for word the same as in the live run
-ok   recorded 1280px demo 1: while it counts, the Auditor shows a progress bar and the count so far (61 updates)  [[{"value":128,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 128 tried","motion":"none/0s"},{"value":768,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 768 tried","motion":"none/0s"}]]
+ok   recorded 1280px demo 1: while it counts, the Auditor shows a progress bar and the count so far (67 updates)  [[{"value":128,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 128 tried","motion":"none/0s"},{"value":839,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 839 tried","motion":"none/0s"}]]
 ok   recorded 1280px demo 1: the "Counting…" card is drawn once, so a screen reader hears it once and not once per slice  [1]
-ok   recorded 1280px demo 1: the page never froze for 100 ms while the audit key counted (2024 ms in all; 0 tasks of 50 ms or more)
+ok   recorded 1280px demo 1: the page never froze for 100 ms while the audit key counted (2205 ms in all; 0 tasks of 50 ms or more)
 ok   recorded 1280px demo 1: bob's key in the Auditor: silence ("The spirits are quiet."), no amount shown  [The spirits are quiet.
 
 This is not the token’s audit key, so the proofs stay sh]
@@ -463,7 +463,7 @@ ok   recorded 1280px demo 4: carol's key: reads 0.0000025 SEANCE “Salt for the
 ok   recorded 1280px demo 4: the leaks panel lists its 10 items in order, for the transaction on show  [token,audit,spent,created,revealed,rule,times,epochs,fee,length]
 ok   recorded 1280px demo 4: the panel's token, audit proofs, amounts in the open and fee are this transaction's
 ok   recorded 1280px demo 4: the spent notes in the panel are the ones the Stranger's card shows (1)
-ok   recorded 1280px: no task of 100 ms or more anywhere in the Auditor walk (none of 50 ms or more)
+ok   recorded 1280px: no task of 100 ms or more anywhere in the Auditor walk (the longest 51 ms)
 ok   recorded 1280px: the page stayed in recorded mode throughout
 ok   recorded 1280px: an unknown id says "recorded mode only knows the demos" and stays recorded
 ok   recorded 1280px: a malformed id is refused without a request
@@ -477,13 +477,13 @@ ok   recorded 1280px loaded: nothing sticks out of the viewport
 ok   recorded 1280px loaded: no clipped text
 ok   recorded 1280px loaded: all 31 tap targets are at least 44x44 px
 ok   recorded 1280px loaded: the three lens cards are side by side  [72,1029 w363 | 459,1029 w363 | 845,1029 w363]
-ok   axe recorded 1280px loaded (Bob reads demo 5, no audit key): 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe recorded 1280px loaded (Bob reads demo 5, no audit key): 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   recorded 1280px all three ghosts at work: no horizontal scroll  [1280 <= 1280]
 ok   recorded 1280px all three ghosts at work: nothing sticks out of the viewport
 ok   recorded 1280px all three ghosts at work: no clipped text
 ok   recorded 1280px all three ghosts at work: all 33 tap targets are at least 44x44 px
 ok   recorded 1280px all three ghosts at work: the three lens cards are side by side  [72,1055 w363 | 459,1055 w363 | 845,1055 w363]
-ok   axe recorded 1280px all three ghosts at work (demo 1): 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe recorded 1280px all three ghosts at work (demo 1): 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   recorded 1280px: Bob's key opens one of the two notes of demo 1, and the caption says "The other sealed note stays shut", not "The other 1"  [h Bob's key. The key was not sent anywhere. The other sealed note stays shut for this key.]
 ok   recorded 1280px: all 25 Tab stops show the yellow 3 px outline and are on screen
 ok   recorded 1280px: Tab order follows the page: skip link, id field, buttons (the file button too), mode switch, the ghost log, Stranger's proof links, keys, own key, Medium's proof link, the Auditor's keys, the template card, footer  [a "Skip=0 input#txid=1 button#look=2 button#summon=3 button#open-file=4 select#demo=5 button#hold=6 button#mode-switch=7 summary "The requests=8 a "Receipt from the second=9 a "The saved copy=10 a "Receipt from the first=11 input[key==18 input#own-key=19 a "Receipt from the second=20 input[audit-key==21 summary "How this token was made=22 a "Tari Ootle explorer=23 a "Tari Ootle docs=24]
@@ -497,7 +497,7 @@ ok   recorded 1280px with the template card opened: nothing sticks out of the vi
 ok   recorded 1280px with the template card opened: no clipped text
 ok   recorded 1280px with the template card opened: all 33 tap targets are at least 44x44 px
 ok   recorded 1280px with the template card opened: the three lens cards are side by side  [72,1055 w363 | 459,1055 w363 | 845,1055 w363]
-ok   axe recorded 1280px with the template card opened: 0 violations  [48 rules passed; needs-review: color-contrast x17]
+ok   axe recorded 1280px with the template card opened: 0 violations  [48 rules passed; needs-review: color-contrast x18]
 ok   recorded 1280px: Tab goes from the title to the code and the two links, each with the yellow 3 px outline and on screen  [pre solid 3 true; a "The file on GitHub (open" solid 3 true; a#token-link "The token on the explore" solid 3 true]
 ok   recorded 1280px: at the end of the walk: the ghost log lists the 4 requests the page made, one row each, as the debugging protocol saw them  [log 4, protocol 4]
 ok   recorded 1280px: at the end of the walk: the headline counts them (4 to 1) and says the keys were in none of them  [This page sent 4 requests to 1 host; your keys were in none of them.]
@@ -530,12 +530,12 @@ ok   recorded 375px landing: nothing sticks out of the viewport
 ok   recorded 375px landing: no clipped text
 ok   recorded 375px landing: all 33 tap targets are at least 44x44 px
 ok   recorded 375px landing: the three lens cards are stacked  [16,1829 w343 | 16,3321 w343 | 16,4278 w343]
-ok   axe recorded 375px landing: 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe recorded 375px landing: 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   recorded 375px: the manual switch turns recorded mode on and says so
-ok   axe recorded 375px landing after the switch: 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe recorded 375px landing after the switch: 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   recorded 375px: "Summon" shows a transaction id (3d1ef4e5bc...), in the id field and the address
 ok   recorded 375px: the Stranger says where the data came from  [Recorded: a saved copy of the indexer's answer, taken on 2026-10-20.]
-ok   recorded 375px: the 10 s step took 27 ms
+ok   recorded 375px: the 10 s step took 24 ms
 ok   recorded 375px: after "Summon": the Stranger's links fit a saved copy (the second indexer's receipt, ledger.json, the first indexer's receipt) for this very id and open safely  [https://esme-indexer-b.ootle.tari.com/transaction-receipts/3d1ef4e5bcc6e27963d6f11a73604f03df15c7e06fa74b510953f4798f0848f0 | https://raw.githubusercontent.com/Kylne700/seance-v2/main/ledger.json | https://esme-indexer-a.ootle.tari.com/transaction-receipts/3d1ef4e5bcc6e27963d6f11a73604f03df15c7e06fa74b510953f4798f0848f0]
 ok   recorded 375px: after "Summon": the Medium card has its own link for the same id  [Receipt from the second public indexer (opens in a new tab) https://esme-indexer-b.ootle.tari.com/transaction-receipts/3d1ef4e5bcc6e27963d6f11a73604f03df15c7e06fa74b510953f4798f0848f0]
 ok   recorded 375px: Summon from the recorded sample never serves one of ours
@@ -604,9 +604,9 @@ ok   recorded 375px demo 1: the leaks panel lists its 10 items in order, for the
 ok   recorded 375px demo 1: the panel's token, audit proofs, amounts in the open and fee are this transaction's
 ok   recorded 375px demo 1: the spent notes in the panel are the ones the Stranger's card shows (1)
 ok   recorded 375px demo 1: the Stranger's card, audit proofs included, is word for word the same as in the live run
-ok   recorded 375px demo 1: while it counts, the Auditor shows a progress bar and the count so far (61 updates)  [[{"value":128,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 128 tried","motion":"none/0s"},{"value":743,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 743 tried","motion":"none/0s"}]]
+ok   recorded 375px demo 1: while it counts, the Auditor shows a progress bar and the count so far (63 updates)  [[{"value":128,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 128 tried","motion":"none/0s"},{"value":824,"max":50000,"label":"Counting the amounts","tick":"Note 1 of 2: amounts up to 824 tried","motion":"none/0s"}]]
 ok   recorded 375px demo 1: the "Counting…" card is drawn once, so a screen reader hears it once and not once per slice  [1]
-ok   recorded 375px demo 1: the page never froze for 100 ms while the audit key counted (2019 ms in all; 0 tasks of 50 ms or more)
+ok   recorded 375px demo 1: the page never froze for 100 ms while the audit key counted (2077 ms in all; 0 tasks of 50 ms or more)
 ok   recorded 375px demo 1: bob's key in the Auditor: silence ("The spirits are quiet."), no amount shown  [The spirits are quiet.
 
 This is not the token’s audit key, so the proofs stay sh]
@@ -652,20 +652,20 @@ ok   recorded 375px loaded: nothing sticks out of the viewport
 ok   recorded 375px loaded: no clipped text
 ok   recorded 375px loaded: all 31 tap targets are at least 44x44 px
 ok   recorded 375px loaded: the three lens cards are stacked  [16,1791 w343 | 16,3326 w343 | 16,4283 w343]
-ok   axe recorded 375px loaded (Bob reads demo 5, no audit key): 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe recorded 375px loaded (Bob reads demo 5, no audit key): 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   recorded 375px all three ghosts at work: no horizontal scroll  [375 <= 375]
 ok   recorded 375px all three ghosts at work: nothing sticks out of the viewport
 ok   recorded 375px all three ghosts at work: no clipped text
 ok   recorded 375px all three ghosts at work: all 33 tap targets are at least 44x44 px
 ok   recorded 375px all three ghosts at work: the three lens cards are stacked  [16,1944 w343 | 16,3414 w343 | 16,4371 w343]
-ok   axe recorded 375px all three ghosts at work (demo 1): 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe recorded 375px all three ghosts at work (demo 1): 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   recorded 375px: Bob's key opens one of the two notes of demo 1, and the caption says "The other sealed note stays shut", not "The other 1"  [h Bob's key. The key was not sent anywhere. The other sealed note stays shut for this key.]
 ok   recorded 375px with every note, audit proof and ciphertext opened: no horizontal scroll  [375 <= 375]
 ok   recorded 375px with every note, audit proof and ciphertext opened: nothing sticks out of the viewport
 ok   recorded 375px with every note, audit proof and ciphertext opened: no clipped text
 ok   recorded 375px with every note, audit proof and ciphertext opened: all 33 tap targets are at least 44x44 px
 ok   recorded 375px with every note, audit proof and ciphertext opened: the three lens cards are stacked  [16,1944 w343 | 16,6239 w343 | 16,7196 w343]
-ok   axe recorded 375px with every note, audit proof and ciphertext opened: 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe recorded 375px with every note, audit proof and ciphertext opened: 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   recorded 375px: all 25 Tab stops show the yellow 3 px outline and are on screen
 ok   recorded 375px: Tab order follows the page: skip link, id field, buttons (the file button too), mode switch, the ghost log, Stranger's proof links, keys, own key, Medium's proof link, the Auditor's keys, the template card, footer  [a "Skip=0 input#txid=1 button#look=2 button#summon=3 button#open-file=4 select#demo=5 button#hold=6 button#mode-switch=7 summary "The requests=8 a "Receipt from the second=9 a "The saved copy=10 a "Receipt from the first=11 input[key==18 input#own-key=19 a "Receipt from the second=20 input[audit-key==21 summary "How this token was made=22 a "Tari Ootle explorer=23 a "Tari Ootle docs=24]
 ok   recorded 375px: the template card is closed and its title counts the real lines of the file (34)  [How this token was made: 34 lines of Rust]
@@ -678,7 +678,7 @@ ok   recorded 375px with the template card opened: nothing sticks out of the vie
 ok   recorded 375px with the template card opened: no clipped text
 ok   recorded 375px with the template card opened: all 33 tap targets are at least 44x44 px
 ok   recorded 375px with the template card opened: the three lens cards are stacked  [16,1944 w343 | 16,6239 w343 | 16,7196 w343]
-ok   axe recorded 375px with the template card opened: 0 violations  [48 rules passed; needs-review: color-contrast x17]
+ok   axe recorded 375px with the template card opened: 0 violations  [48 rules passed; needs-review: color-contrast x18]
 ok   recorded 375px: Tab goes from the title to the code and the two links, each with the yellow 3 px outline and on screen  [pre solid 3 true; a "The file on GitHub (open" solid 3 true; a#token-link "The token on the explore" solid 3 true]
 ok   recorded 375px: at the end of the walk: the ghost log lists the 3 requests the page made, one row each, as the debugging protocol saw them  [log 3, protocol 3]
 ok   recorded 375px: at the end of the walk: the headline counts them (3 to 1) and says the keys were in none of them  [This page sent 3 requests to 1 host; your keys were in none of them.]
@@ -723,8 +723,8 @@ ok   auto-fallback from the list (an id outside the demos): the ghost log lists 
 ok   auto-fallback from the list (an id outside the demos): the headline counts them (4 to 2) and says the keys were in none of them  [This page sent 4 requests to 2 hosts; your keys were in none of them.]
 ok   auto-fallback from the list (an id outside the demos): every row says what that host learns: for the list "Your IP address, the time and the headers your browser adds. No transaction id.", for an id "Your IP address, the time and this id."
 ok   auto-fallback from the list (an id outside the demos): no row is marked with a warning, and none is still waiting for an answer
-ok   auto-fallback (indexer never answers): the page gives up and switches to recorded  [after 8004 ms, 1 request held]
-ok   auto-fallback (indexer never answers): the wait is about the 8 s timeout  [8004 ms]
+ok   auto-fallback (indexer never answers): the page gives up and switches to recorded  [after 8052 ms, 1 request held]
+ok   auto-fallback (indexer never answers): the wait is about the 8 s timeout  [8052 ms]
 
 == the indexer forgot a demo (mocked: it answers 404 to all but one)
 ok   a demo the indexer forgot (1280px): the demo id in the address is asked of the indexer by id, once, without the list  [e04e6e78 | 0 list]
@@ -740,7 +740,7 @@ ok   a demo the indexer forgot (1280px): nothing sticks out of the viewport
 ok   a demo the indexer forgot (1280px): no clipped text
 ok   a demo the indexer forgot (1280px): all 31 tap targets are at least 44x44 px
 ok   a demo the indexer forgot (1280px): the three lens cards are side by side  [72,1051 w363 | 459,1051 w363 | 845,1051 w363]
-ok   axe a demo the indexer forgot (1280px): 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe a demo the indexer forgot (1280px): 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   a demo the indexer forgot (1280px): a demo the indexer still holds is read live, one request, right after the dropped one  [Live: read from the indexer just now. | 2 requests]
 ok   a demo the indexer forgot (1280px): the demo it still holds: the Stranger's links fit a live answer (the explorer) for this very id and open safely  [https://explorer.tari.mw/tx/80a13d44a497870e01bdf42af626633c792f3df1f6fb802da884f37991dc0125]
 ok   a demo the indexer forgot (1280px): the demo it still holds: the Medium card has its own link for the same id  [Open in the explorer (opens in a new tab) https://explorer.tari.mw/tx/80a13d44a497870e01bdf42af626633c792f3df1f6fb802da884f37991dc0125]
@@ -751,7 +751,7 @@ ok   a demo the indexer forgot (1280px), the prompt showing: nothing sticks out 
 ok   a demo the indexer forgot (1280px), the prompt showing: no clipped text
 ok   a demo the indexer forgot (1280px), the prompt showing: all 25 tap targets are at least 44x44 px
 ok   a demo the indexer forgot (1280px), the prompt showing: the three lens cards are side by side  [72,1107 w363 | 459,1107 w363 | 845,1107 w363]
-ok   axe a demo the indexer forgot (1280px), the prompt showing: 0 violations  [46 rules passed; needs-review: color-contrast x18]
+ok   axe a demo the indexer forgot (1280px), the prompt showing: 0 violations  [46 rules passed; needs-review: color-contrast x19]
 ok   a demo the indexer forgot (1280px): "Ask for it anyway" asks for that id once and gets the indexer's "not found", with the reason; the page is still live  [4 by id, 1 list | Live: The indexer does not know this transaction id on Esmeralda. The public indexer d]
 ok   a demo the indexer forgot (1280px): an id the list holds is read from the list: no request for it, and the list is not fetched again  [Live: found in the indexer's latest 2 transactions, so the indexer was not asked for this id. | 4 by id, 1 list]
 ok   a demo the indexer forgot (1280px): the id found in the list: the Stranger's links fit a live answer (the explorer) for this very id and open safely  [https://explorer.tari.mw/tx/3d1ef4e5bcc6e27963d6f11a73604f03df15c7e06fa74b510953f4798f0848f0]
@@ -783,7 +783,7 @@ ok   a demo the indexer forgot (375px): nothing sticks out of the viewport
 ok   a demo the indexer forgot (375px): no clipped text
 ok   a demo the indexer forgot (375px): all 31 tap targets are at least 44x44 px
 ok   a demo the indexer forgot (375px): the three lens cards are stacked  [16,1829 w343 | 16,3386 w343 | 16,4315 w343]
-ok   axe a demo the indexer forgot (375px): 0 violations  [46 rules passed; needs-review: color-contrast x17]
+ok   axe a demo the indexer forgot (375px): 0 violations  [46 rules passed; needs-review: color-contrast x18]
 ok   a demo the indexer forgot (375px): a demo the indexer still holds is read live, one request, right after the dropped one  [Live: read from the indexer just now. | 2 requests]
 ok   a demo the indexer forgot (375px): the demo it still holds: the Stranger's links fit a live answer (the explorer) for this very id and open safely  [https://explorer.tari.mw/tx/80a13d44a497870e01bdf42af626633c792f3df1f6fb802da884f37991dc0125]
 ok   a demo the indexer forgot (375px): the demo it still holds: the Medium card has its own link for the same id  [Open in the explorer (opens in a new tab) https://explorer.tari.mw/tx/80a13d44a497870e01bdf42af626633c792f3df1f6fb802da884f37991dc0125]
@@ -794,7 +794,7 @@ ok   a demo the indexer forgot (375px), the prompt showing: nothing sticks out o
 ok   a demo the indexer forgot (375px), the prompt showing: no clipped text
 ok   a demo the indexer forgot (375px), the prompt showing: all 25 tap targets are at least 44x44 px
 ok   a demo the indexer forgot (375px), the prompt showing: the three lens cards are stacked  [16,1915 w343 | 16,2139 w343 | 16,2893 w343]
-ok   axe a demo the indexer forgot (375px), the prompt showing: 0 violations  [46 rules passed; needs-review: color-contrast x18]
+ok   axe a demo the indexer forgot (375px), the prompt showing: 0 violations  [46 rules passed; needs-review: color-contrast x19]
 ok   a demo the indexer forgot (375px): "Ask for it anyway" asks for that id once and gets the indexer's "not found", with the reason; the page is still live  [4 by id, 1 list | Live: The indexer does not know this transaction id on Esmeralda. The public indexer d]
 ok   a demo the indexer forgot (375px): an id the list holds is read from the list: no request for it, and the list is not fetched again  [Live: found in the indexer's latest 2 transactions, so the indexer was not asked for this id. | 4 by id, 1 list]
 ok   a demo the indexer forgot (375px): the id found in the list: the Stranger's links fit a live answer (the explorer) for this very id and open safely  [https://explorer.tari.mw/tx/3d1ef4e5bcc6e27963d6f11a73604f03df15c7e06fa74b510953f4798f0848f0]
@@ -848,7 +848,7 @@ ok   a saved transaction file (1280px): nothing sticks out of the viewport
 ok   a saved transaction file (1280px): no clipped text
 ok   a saved transaction file (1280px): all 31 tap targets are at least 44x44 px
 ok   a saved transaction file (1280px): the three lens cards are side by side  [72,1084 w363 | 459,1084 w363 | 845,1084 w363]
-ok   axe a saved transaction file (1280px): 0 violations  [46 rules passed; needs-review: color-contrast x18]
+ok   axe a saved transaction file (1280px): 0 violations  [46 rules passed; needs-review: color-contrast x19]
 ok   a saved transaction file (1280px): Enter on the file button opens the chooser, and cancelling it leaves the transaction as it was
 ok   a saved transaction file (1280px): a file that is not JSON: the page says so, in these words, and shows no transaction  [That file is not JSON. Open the indexer's answer for one transaction, saved as i]
 ok   a saved transaction file (1280px): a file that is a list of transactions: the page says so, in these words, and shows no transaction  [That file is a list of transactions. Open the indexer's answer for a single tran]
@@ -861,8 +861,8 @@ ok   a saved transaction file (1280px), the ghost log open: no horizontal scroll
 ok   a saved transaction file (1280px), the ghost log open: nothing sticks out of the viewport
 ok   a saved transaction file (1280px), the ghost log open: no clipped text
 ok   a saved transaction file (1280px), the ghost log open: all 31 tap targets are at least 44x44 px
-ok   a saved transaction file (1280px), the ghost log open: the three lens cards are side by side  [72,1424 w363 | 459,1424 w363 | 845,1424 w363]
-ok   axe a saved transaction file (1280px), the ghost log open: 0 violations  [52 rules passed; needs-review: color-contrast x18]
+ok   a saved transaction file (1280px), the ghost log open: the three lens cards are side by side  [72,1084 w363 | 459,1084 w363 | 845,1084 w363]
+ok   axe a saved transaction file (1280px), the ghost log open: 0 violations  [46 rules passed; needs-review: color-contrast x19]
 ok   a saved transaction file (1280px): 0 Content Security Policy violations
 ok   a saved transaction file (1280px): the ghost log lists the 3 requests the page made, one row each, as the debugging protocol saw them  [log 3, protocol 3]
 ok   a saved transaction file (1280px): the headline counts them (3 to 1) and says the keys were in none of them  [This page sent 3 requests to 1 host; your keys were in none of them.]
@@ -890,7 +890,7 @@ ok   a saved transaction file (375px): nothing sticks out of the viewport
 ok   a saved transaction file (375px): no clipped text
 ok   a saved transaction file (375px): all 31 tap targets are at least 44x44 px
 ok   a saved transaction file (375px): the three lens cards are stacked  [16,1888 w343 | 16,3230 w343 | 16,4161 w343]
-ok   axe a saved transaction file (375px): 0 violations  [46 rules passed; needs-review: color-contrast x18]
+ok   axe a saved transaction file (375px): 0 violations  [46 rules passed; needs-review: color-contrast x19]
 ok   a saved transaction file (375px): Enter on the file button opens the chooser, and cancelling it leaves the transaction as it was
 ok   a saved transaction file (375px): a file that is not JSON: the page says so, in these words, and shows no transaction  [That file is not JSON. Open the indexer's answer for one transaction, saved as i]
 ok   a saved transaction file (375px): a file that is a list of transactions: the page says so, in these words, and shows no transaction  [That file is a list of transactions. Open the indexer's answer for a single tran]
@@ -904,7 +904,7 @@ ok   a saved transaction file (375px), the ghost log open: nothing sticks out of
 ok   a saved transaction file (375px), the ghost log open: no clipped text
 ok   a saved transaction file (375px), the ghost log open: all 31 tap targets are at least 44x44 px
 ok   a saved transaction file (375px), the ghost log open: the three lens cards are stacked  [16,2526 w343 | 16,3868 w343 | 16,4799 w343]
-ok   axe a saved transaction file (375px), the ghost log open: 0 violations  [53 rules passed; needs-review: color-contrast x34]
+ok   axe a saved transaction file (375px), the ghost log open: 0 violations  [53 rules passed; needs-review: color-contrast x35]
 ok   a saved transaction file (375px): 0 Content Security Policy violations
 ok   a saved transaction file (375px): the ghost log lists the 3 requests the page made, one row each, as the debugging protocol saw them  [log 3, protocol 3]
 ok   a saved transaction file (375px): the headline counts them (3 to 1) and says the keys were in none of them  [This page sent 3 requests to 1 host; your keys were in none of them.]
@@ -914,11 +914,79 @@ ok   a saved transaction file (375px): no page error and no console line
 ok   uppercase #tx= link: the Stranger shows the transaction an id in capitals names (the id is lower-cased first)  [e04e6e78021a]
 ok   uppercase #tx= link: the load's own status shows, not the loading line  [The indexer did not answer, so the page switched to recorded data. Sho]
 ok   uppercase #tx= link: no page error
+
+== the offline copy: one file that cannot make page requests (opened from disk, then served like Pages)
+ok   the offline copy opened from disk (1280px): the lookup, "Summon", the mode switch and "Ask for it anyway" are hidden; the file button and the prepared demos stay; no visible line mentions the indexer  [shown anyway: ; missing: ]
+ok   the offline copy opened from disk (1280px): the first screen is demo 1 from the recording, marked "Offline", with the line "Offline copy: open a saved transaction file."  [Offline | Offline copy: open a saved transaction file. | A saved example is on the table, so the three ghosts have so]
+ok   the offline copy opened from disk (1280px): the Medium, with Bob's key (already in hand), reads demo 1: reads 0.00031415 SEANCE “Midnight at the old crypt. Come alone.”  [[{"amount":"0.00031415 SEANCE","memo":"“Midnight at the old crypt. Come alone.”"}]]
+ok   the offline copy opened from disk (1280px): the Auditor, with the audit key, counts demo 1 counts 0.00031415 SEANCE + 0.00018585 SEANCE and says the memo is shut  [[{"term":"Sealed note 1 of 2 counted","amount":"0.00031415 SEANCE","memo":"Memo: shut. The audit key cannot open it."},{"term":"Sealed note 2 of 2 counted","amount":"0.00018585 SEANCE","memo":"Memo: shut. The audit key cannot open it."}]]
+ok   the offline copy opened from disk (1280px): the Auditor, with the audit key, counts demo 1: the memo is in neither the Auditor's card nor the Stranger's, and the Stranger's card shows no amount
+ok   the offline copy opened from disk (1280px): the Poltergeist shows its five tricks, scored as the tests expect  [reuse / 11 of 11 / 0 of 11; amount / 11 of 11 / 1 of 11; timing / 11 of 11 / 11 of 11; fee / 11 of 11 / 11 of 11; spend / Not applicable / 11 of 11]
+ok   the offline copy opened from disk (1280px): every result says which ledger it is from: "synthetic" for the transparent one, "recorded, real" for Tari
+ok   the offline copy opened from disk (1280px): the page says the transparent ledger is synthetic, and so does the verdict  [On the synthetic transparent ledger each of the 4 tricks gets all 11. On Tari, address reuse ties 0 of 11 and amount matching finds 1 of 11. Timing, the fee fingerprint and the spend graph still tie all 11.]
+ok   the offline copy opened from disk (1280px): the file's transaction is on the table, marked "File", with the words about where it came from  [File | From your file: nothing was asked of any server. This page cannot tell whether the file is a genuine answer from an indexer. | ]
+ok   the offline copy opened from disk (1280px): a typed key unchecks the demo keys and is called "your key"
+ok   the offline copy opened from disk (1280px): the typed key reads the file's transaction: reads 0.00007 SEANCE “I never told the auditor about the cat.”  [[{"amount":"0.00007 SEANCE","memo":"“I never told the auditor about the cat.”"}]]
+ok   the offline copy opened from disk (1280px): the audit key counts the file's transaction counts 0.00007 SEANCE + 0.00011585 SEANCE and says the memo is shut  [[{"term":"Sealed note 1 of 2 counted","amount":"0.00007 SEANCE","memo":"Memo: shut. The audit key cannot open it."},{"term":"Sealed note 2 of 2 counted","amount":"0.00011585 SEANCE","memo":"Memo: shut. The audit key cannot open it."}]]
+ok   the offline copy opened from disk (1280px): the audit key counts the file's transaction: the memo is in neither the Auditor's card nor the Stranger's, and the Stranger's card shows no amount
+ok   the offline copy opened from disk (1280px): the leaks panel: the leaks panel lists its 10 items in order, for the transaction on show  [token,audit,spent,created,revealed,rule,times,epochs,fee,length]
+ok   the offline copy opened from disk (1280px): the leaks panel: the panel's token, audit proofs, amounts in the open and fee are this transaction's
+ok   the offline copy opened from disk (1280px): the leaks panel: the spent notes in the panel are the ones the Stranger's card shows (1)
+ok   the offline copy opened from disk (1280px): the Stranger's links fit a live answer (the explorer) for this very id and open safely  [https://explorer.tari.mw/tx/1666311102df4c809a4092de5064d40114ff4616218df8ac74a7662b2c48ff8c]
+ok   the offline copy opened from disk (1280px): the Medium card has its own link for the same id  [Open in the explorer (opens in a new tab) https://explorer.tari.mw/tx/1666311102df4c809a4092de5064d40114ff4616218df8ac74a7662b2c48ff8c]
+ok   the offline copy opened from disk (1280px): the ghost log says 0 requests, 0 hosts, no key in any request  [This page sent 0 requests to 0 hosts; your keys were in none of them. | Since you opened your file: 0 requests.]
+ok   the offline copy opened from disk (1280px): no horizontal scroll  [1280 <= 1280]
+ok   the offline copy opened from disk (1280px): nothing sticks out of the viewport
+ok   the offline copy opened from disk (1280px): no clipped text
+ok   the offline copy opened from disk (1280px): all 27 tap targets are at least 44x44 px
+ok   the offline copy opened from disk (1280px): the three lens cards are side by side  [72,1023 w363 | 459,1023 w363 | 845,1023 w363]
+ok   axe the offline copy opened from disk (1280px): 0 violations  [46 rules passed; needs-review: color-contrast x18]
+ok   the offline copy opened from disk (1280px): the Stranger, the Medium, the Auditor, the leaks panel and the Poltergeist say the same words as the online build on the same file and key  [differ: none; 5131 characters compared]
+ok   the offline copy opened from disk (1280px): loading, opening the file, typing the key and running every ghost: 0 requests other than the file itself, 0 failed  [1 seen (the file)]
+ok   the offline copy opened from disk (1280px): 0 Content Security Policy violations
+ok   the offline copy opened from disk (1280px): no page error and no console line
+ok   the offline copy opened from disk (1280px): negative controls are refused: a fetch to another site, an injected inline script, an image, a form post and a <base> tag; the page did not navigate  [blocked (TypeError); injected=false; connect-src https://example.org/leak?k=secret | script-src-elem inline | base-uri https://example.org/ | img-src https://example.org/pixel.png | form-action https://example.org/post]
+ok   the offline copy opened from disk (1280px): and none of them reached the network (still 1 request seen)  [1]
+ok   the offline copy opened from disk (375px): the lookup, "Summon", the mode switch and "Ask for it anyway" are hidden; the file button and the prepared demos stay; no visible line mentions the indexer  [shown anyway: ; missing: ]
+ok   the offline copy opened from disk (375px): the first screen is demo 1 from the recording, marked "Offline", with the line "Offline copy: open a saved transaction file."  [Offline | Offline copy: open a saved transaction file. | A saved example is on the table, so the three ghosts have so]
+ok   the offline copy opened from disk (375px): the Medium, with Bob's key (already in hand), reads demo 1: reads 0.00031415 SEANCE “Midnight at the old crypt. Come alone.”  [[{"amount":"0.00031415 SEANCE","memo":"“Midnight at the old crypt. Come alone.”"}]]
+ok   the offline copy opened from disk (375px): the Auditor, with the audit key, counts demo 1 counts 0.00031415 SEANCE + 0.00018585 SEANCE and says the memo is shut  [[{"term":"Sealed note 1 of 2 counted","amount":"0.00031415 SEANCE","memo":"Memo: shut. The audit key cannot open it."},{"term":"Sealed note 2 of 2 counted","amount":"0.00018585 SEANCE","memo":"Memo: shut. The audit key cannot open it."}]]
+ok   the offline copy opened from disk (375px): the Auditor, with the audit key, counts demo 1: the memo is in neither the Auditor's card nor the Stranger's, and the Stranger's card shows no amount
+ok   the offline copy opened from disk (375px): the Poltergeist shows its five tricks, scored as the tests expect  [reuse / 11 of 11 / 0 of 11; amount / 11 of 11 / 1 of 11; timing / 11 of 11 / 11 of 11; fee / 11 of 11 / 11 of 11; spend / Not applicable / 11 of 11]
+ok   the offline copy opened from disk (375px): every result says which ledger it is from: "synthetic" for the transparent one, "recorded, real" for Tari
+ok   the offline copy opened from disk (375px): the page says the transparent ledger is synthetic, and so does the verdict  [On the synthetic transparent ledger each of the 4 tricks gets all 11. On Tari, address reuse ties 0 of 11 and amount matching finds 1 of 11. Timing, the fee fingerprint and the spend graph still tie all 11.]
+ok   the offline copy opened from disk (375px): the file's transaction is on the table, marked "File", with the words about where it came from  [File | From your file: nothing was asked of any server. This page cannot tell whether the file is a genuine answer from an indexer. | ]
+ok   the offline copy opened from disk (375px): a typed key unchecks the demo keys and is called "your key"
+ok   the offline copy opened from disk (375px): the typed key reads the file's transaction: reads 0.00007 SEANCE “I never told the auditor about the cat.”  [[{"amount":"0.00007 SEANCE","memo":"“I never told the auditor about the cat.”"}]]
+ok   the offline copy opened from disk (375px): the audit key counts the file's transaction counts 0.00007 SEANCE + 0.00011585 SEANCE and says the memo is shut  [[{"term":"Sealed note 1 of 2 counted","amount":"0.00007 SEANCE","memo":"Memo: shut. The audit key cannot open it."},{"term":"Sealed note 2 of 2 counted","amount":"0.00011585 SEANCE","memo":"Memo: shut. The audit key cannot open it."}]]
+ok   the offline copy opened from disk (375px): the audit key counts the file's transaction: the memo is in neither the Auditor's card nor the Stranger's, and the Stranger's card shows no amount
+ok   the offline copy opened from disk (375px): the leaks panel: the leaks panel lists its 10 items in order, for the transaction on show  [token,audit,spent,created,revealed,rule,times,epochs,fee,length]
+ok   the offline copy opened from disk (375px): the leaks panel: the panel's token, audit proofs, amounts in the open and fee are this transaction's
+ok   the offline copy opened from disk (375px): the leaks panel: the spent notes in the panel are the ones the Stranger's card shows (1)
+ok   the offline copy opened from disk (375px): the Stranger's links fit a live answer (the explorer) for this very id and open safely  [https://explorer.tari.mw/tx/1666311102df4c809a4092de5064d40114ff4616218df8ac74a7662b2c48ff8c]
+ok   the offline copy opened from disk (375px): the Medium card has its own link for the same id  [Open in the explorer (opens in a new tab) https://explorer.tari.mw/tx/1666311102df4c809a4092de5064d40114ff4616218df8ac74a7662b2c48ff8c]
+ok   the offline copy opened from disk (375px): the ghost log says 0 requests, 0 hosts, no key in any request  [This page sent 0 requests to 0 hosts; your keys were in none of them. | Since you opened your file: 0 requests.]
+ok   the offline copy opened from disk (375px): no horizontal scroll  [375 <= 375]
+ok   the offline copy opened from disk (375px): nothing sticks out of the viewport
+ok   the offline copy opened from disk (375px): no clipped text
+ok   the offline copy opened from disk (375px): all 27 tap targets are at least 44x44 px
+ok   the offline copy opened from disk (375px): the three lens cards are stacked  [16,1349 w343 | 16,2690 w343 | 16,3622 w343]
+ok   axe the offline copy opened from disk (375px): 0 violations  [46 rules passed; needs-review: color-contrast x18]
+ok   the offline copy opened from disk (375px): loading, opening the file, typing the key and running every ghost: 0 requests other than the file itself, 0 failed  [1 seen (the file)]
+ok   the offline copy opened from disk (375px): 0 Content Security Policy violations
+ok   the offline copy opened from disk (375px): no page error and no console line
+ok   the offline copy opened from disk (375px): negative controls are refused: a fetch to another site, an injected inline script, an image, a form post and a <base> tag; the page did not navigate  [blocked (TypeError); injected=false; connect-src https://example.org/leak?k=secret | script-src-elem inline | base-uri https://example.org/ | img-src https://example.org/pixel.png | form-action https://example.org/post]
+ok   the offline copy opened from disk (375px): and none of them reached the network (still 1 request seen)  [1]
+ok   the offline copy served under /seance-v2/: dist/seance-offline.html, as served, is byte for byte the committed public/seance-offline.html  [200 1923237 bytes, sha256 90c086da1c86eb4e89da82c94b7c7f5e9ea1eb40f5e1938e1caba2c9bacd7231]
+ok   the offline copy served under /seance-v2/: it starts the same way  [Offline | Offline copy: open a saved transaction file.]
+ok   the offline copy served under /seance-v2/: the ghost log lists one request: the page itself  [This page sent 1 request to 1 host; your keys were in none of them. | 1 0.00 s 127.0.0.1:4391 /seance-v2/seance-offline.html unknown 1878.2 KB 200 Your IP address, the time and which file yo]
+ok   the offline copy served under /seance-v2/: the debugging protocol saw that one request and no other  [1 seen]
+ok   the offline copy served under /seance-v2/: 0 Content Security Policy violations, no page error, no console line
 ok   while the code loads: the scripts are held back, so the page has none of its code yet  [1 held, 0 demo options]
 ok   while the code loads: a loading line shows  [The page's code is still loading. The buttons wake up when it is ready.]
 ok   while the code loads: all five buttons say not ready (aria-disabled, dimmed, a progress cursor)  [look:true summon:true open-file:true hold:true mode-switch:true]
 ok   while the code loads: "Look at it" is also disabled, being a submit button (a click or Enter on it would make the browser cancel the code that is still on its way)
-ok   while the code loads: a click on a button, or Enter in the id field, does nothing yet (no navigation, the line stays)  [http://127.0.0.1:4273/seance-v2/]
+ok   while the code loads: a click on a button, or Enter in the id field, does nothing yet (no navigation, the line stays)  [http://127.0.0.1:4391/seance-v2/]
 ok   while the code loads: the loading line is gone once the code has run; the status line now describes the saved example  [A saved example is on the table, so the three ghosts have something to]
 ok   while the code loads: the saved example is on the table, with nothing asked of the indexer  [891b43606b33]
 ok   while the code loads: the five buttons are ready (not aria-disabled, no dimming)  [look:false summon:false open-file:false hold:false mode-switch:null]
@@ -947,14 +1015,14 @@ ok   keyboard 1280px: demo 2, the audit key again: the memo is in neither the Au
 ok   keyboard 1280px: Space on "Summon" works in recorded mode and keeps focus
 ok   motion: by default the flame flickers and the readings of the Medium and the Auditor fade in (control)  [flicker, rise, rise]
 ok   motion: with prefers-reduced-motion the flame is still, readings (the Auditor's too) do not fade in, scrolling is instant  [none, none, none, auto]
-ok   motion: with prefers-reduced-motion the Auditor still shows its progress bar, and nothing about it is animated  [11 updates: none/0s]
+ok   motion: with prefers-reduced-motion the Auditor still shows its progress bar, and nothing about it is animated  [10 updates: none/0s]
 ok   motion: reduced motion still scrolls to the answer on a phone  [top 16px, scrollY 1928]
 ok   auditor on a slow phone (375px, CPU 4x slower): control: the long-task observer sees a deliberate 120 ms block  [120 ms]
 ok   auditor on a slow phone (375px, CPU 4x slower): the audit key counts 0.00031415 SEANCE + 0.00018585 SEANCE and says the memo is shut  [[{"term":"Sealed note 1 of 2 counted","amount":"0.00031415 SEANCE","memo":"Memo: shut. The audit key cannot open it."},{"term":"Sealed note 2 of 2 counted","amount":"0.00018585 SEANCE","memo":"Memo: shut. The audit key cannot open it."}]]
 ok   auditor on a slow phone (375px, CPU 4x slower): the audit key: the memo is in neither the Auditor's card nor the Stranger's, and the Stranger's card shows no amount
 ok   auditor on a slow phone (375px, CPU 4x slower), counted again: the audit key counts 0.00031415 SEANCE + 0.00018585 SEANCE and says the memo is shut  [[{"term":"Sealed note 1 of 2 counted","amount":"0.00031415 SEANCE","memo":"Memo: shut. The audit key cannot open it."},{"term":"Sealed note 2 of 2 counted","amount":"0.00018585 SEANCE","memo":"Memo: shut. The audit key cannot open it."}]]
 ok   auditor on a slow phone (375px, CPU 4x slower), counted again: the audit key: the memo is in neither the Auditor's card nor the Stranger's, and the Stranger's card shows no amount
-ok   auditor on a slow phone (375px, CPU 4x slower): the Auditor never froze the page for 100 ms (8983 ms in all; 1 tasks of 50 ms or more, the longest 51 ms; 281 progress updates; "Counting" card drawn 1 time)  [51]
+ok   auditor on a slow phone (375px, CPU 4x slower): the Auditor never froze the page for 100 ms (9793 ms in all; 0 tasks of 50 ms or more; 289 progress updates; "Counting" card drawn 1 time)
 ok   auditor on a slow phone (375px, CPU 4x slower): drawing the cards at the click, with the first slice, took no task of 200 ms or more (the longest under 50 ms)
 ok   csp: the policy is v1's, word for word: v2 adds no directive and no source (no 'self' in connect-src)  [default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self'; connect-src https://esme-indexer-a.ootle.tari.com; base-uri 'none'; form-action 'none']
 ok   csp: loading the page and drawing the first answer caused 0 violations

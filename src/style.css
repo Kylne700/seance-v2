@@ -45,6 +45,9 @@ code { font-family: var(--mono); }
 .skip:focus { top: 8px; }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 [hidden] { display: none !important; } /* a class that sets display (.row) would otherwise win over the hidden attribute */
+.offline-only { display: none; }
+.offline .offline-only { display: revert; }
+.offline .online { display: none !important; } /* the offline copy (scripts/build-offline.mjs puts class="offline" on <html>) hides what needs the network */
 
 /* Hero */
 .hero { padding: 40px 0 8px; }
