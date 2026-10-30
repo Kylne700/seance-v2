@@ -1489,11 +1489,12 @@ function staticChecks() {
   // The recording's own `indexer` field names where it was taken from: recorded data, kept as it was, and never contacted.
   const allowed = new Set([INDEXER_HOST, new URL(EXPLORER_URL).host, 'ootle.tari.com', new URL(MIRROR_URL).host, 'github.com', new URL(LEDGER_URL).host, 'www.w3.org', new URL(PUBLIC_URL).host, new URL(ledger.indexer).host])
   const found = new Map()
+  // The notices (.md) and the pictures and videos are not pages: the demo video's encoder string names videolan.org.
   const walkDir = (d) => {
     for (const n of readdirSync(d)) {
       const p = join(d, n)
       if (statSync(p).isDirectory()) walkDir(p)
-      else if (!n.endsWith('.md')) for (const m of readFileSync(p, 'utf8').matchAll(/(?:https?:)?\/\/([a-z0-9][a-z0-9.-]*\.[a-z]{2,})/gi)) found.set(m[1].toLowerCase(), n)
+      else if (!/\.(md|mp4|png)$/.test(n)) for (const m of readFileSync(p, 'utf8').matchAll(/(?:https?:)?\/\/([a-z0-9][a-z0-9.-]*\.[a-z]{2,})/gi)) found.set(m[1].toLowerCase(), n)
     }
   }
   walkDir(DIST)
