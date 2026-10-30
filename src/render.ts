@@ -89,7 +89,7 @@ function note(o: StealthOutput, i: number, total: number): HTMLElement {
           { class: 'bytes' },
           h('summary', null, 'The audit proof ', h('span', { class: 'peek' }, `${o.viewableBalanceProof.length} characters`)),
           hex(o.viewableBalanceProof),
-          caption("An extra copy of the amount, locked to the token's audit key, with a proof that it matches the commitment. Everyone can see it. Only the audit key opens it, and that key cannot spend the note or read its memo."),
+          caption("An extra copy of the amount, locked to the token's audit key, with a proof that it matches the commitment. Everyone can see it. Only the audit key opens it, and not the memo. It cannot spend if it is a fresh key used for nothing else (by the code; not tried)."),
         )
       : null,
     h('p', { class: 'term' }, 'Spend rule'),

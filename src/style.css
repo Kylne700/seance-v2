@@ -218,6 +218,32 @@ table.net { border-collapse: collapse; width: 100%; min-width: 48rem; font-size:
 .why { margin: 0; max-width: 46rem; }
 .verdict { max-width: 46rem; font-family: var(--serif); font-size: 1.25rem; line-height: 1.4; }
 
+/* Ghosts from later: nothing to focus here, so no link, button or scrolling box */
+.later { margin-bottom: 48px; }
+.later-ghost { margin: 24px 0 32px; }
+.later-ghost h3 { font-size: 1.375rem; margin-bottom: 6px; }
+.later-ghost h4 { font-size: 1.0625rem; margin: 20px 0 8px; }
+.later-how, .later-note, .later-key, .later-wait { max-width: 46rem; }
+.later-note, .later-key, .later-wait { color: var(--muted); }
+.later-wait { font-style: italic; }
+.later-ladder, .later-tiers, .later-fields { list-style: none; margin: 12px 0 16px; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.later-rung, .later-tier, .later-field { min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.later-rung h4 { margin-top: 0; }
+.later-count { margin: 0 0 10px; padding: 8px 12px; background: var(--well); border-left: 3px solid var(--violet); border-radius: 8px; }
+.later-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.later-tier p, .later-field p { margin: 0 0 6px; }
+.later-name { font-family: var(--serif); font-weight: 600; font-size: 1.0625rem; }
+.later-lab { display: block; color: var(--violet); font-size: .8125rem; letter-spacing: .06em; text-transform: uppercase; }
+@media (min-width: 960px) {
+  .later-ladder { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .later-field { display: grid; grid-template-columns: 9rem repeat(3, minmax(0, 1fr)); column-gap: 20px; align-items: start; }
+  .later-field p { margin: 0; }
+}
+.later-sim { max-width: 56rem; margin: 20px 0 0; padding: 12px 16px; border: 1px dashed var(--amber); border-radius: 12px; background: var(--well); }
+.later-sim-label { margin: 0 0 8px; font-weight: 600; }
+.later-sim-line { margin: 0 0 4px; color: var(--muted); }
+.later-sim-value { margin: 0 0 4px; font-family: var(--serif); font-size: 1.125rem; }
+
 /* Medium */
 .keys { border: 0; margin: 0 0 12px; padding: 0; min-width: 0; }
 .keys legend { font-weight: 600; padding: 0; margin-bottom: 8px; }

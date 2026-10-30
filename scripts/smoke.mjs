@@ -20,6 +20,7 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import puppeteer from 'puppeteer-core'
 import { EXPLORER_URL, INDEXER_URL, LEDGER_URL, MIRROR_URL, explorerTx, mirrorReceipt, receiptTx } from '../src/config.ts'
+import { parseTransaction } from '../src/chain.ts'
 import { amountOf, plural, short, tari } from '../src/format.ts'
 import { serveDir } from './serve.mjs'
 
@@ -525,6 +526,7 @@ async function walk(browser, { mode, w }) {
   poltergeistChecks(s, tag)
   if (live) liveBodies.set(`${w}:polt`, s.poltText)
   else if (liveBodies.has(`${w}:polt`)) check(liveBodies.get(`${w}:polt`) === s.poltText, `${tag}: the Poltergeist's text is word for word the same as in the live run (it reads recorded data only)`)
+  await laterChecks(page, log, `${tag}: first view`, { since: mark(log) })
   await layout(page, `${tag} landing`, { wide })
   if (live) await shot(page, `seance-${w}-live-landing.png`)
   await shotEl(page, '#poltergeist', `seance-${w}-${mode}-poltergeist.png`)
@@ -541,6 +543,7 @@ async function walk(browser, { mode, w }) {
 
   // 10 seconds: summon a recent transaction
   const t0 = Date.now()
+  const m0 = mark(log)
   await page.click('#summon')
   await settled(page)
   const ms = Date.now() - t0
@@ -566,6 +569,7 @@ async function walk(browser, { mode, w }) {
   }
   check(s.leaks.map((l) => l.id).join() === LEAK_IDS.join() && s.leaksEmpty === null, `${tag}: the leaks panel lists what this transaction leaves public`, s.leaks.map((l) => l.id).join())
   check(inView(s), `${tag}: the answer is on screen without scrolling by hand: the Stranger card ${wide ? 'starts in the upper half' : 'was scrolled to the top'}`, `top ${s.strangerTop}px of ${H}px, scrollY ${s.scrollY}`)
+  await laterChecks(page, log, `${tag}: after "Summon"`, { key: s.checkedKey ? 'checked' : 'none', since: live ? null : m0 })
 
   // 10 seconds, other way: paste an id
   if (live && !quiet && !OURS.has(s.shownId)) {
@@ -595,6 +599,7 @@ async function walk(browser, { mode, w }) {
   // 60 seconds: hold the seance on a demo
   await page.select('#demo', tx(1).id)
   await armReading(page)
+  const m1 = mark(log)
   await page.click('#hold')
   await settled(page)
   await scrollSettled(page)
@@ -603,6 +608,7 @@ async function walk(browser, { mode, w }) {
   checkLinks(s, tx(1).id, `${tag}: demo ${demoNo(tx(1))}`)
   expectHeard(s, tx(1), 'bob', `${tag}: Bob's key on demo ${demoNo(tx(1))}`)
   leaksChecks(s, tx(1), `${tag} demo ${demoNo(tx(1))}`)
+  u7(await laterChecks(page, log, `${tag} demo ${demoNo(tx(1))}`, { since: live ? null : m1 }), 'bob', `${tag} demo ${demoNo(tx(1))}`)
   check(s.auditEmpty?.startsWith(AUDIT_NO_PROOF) && s.auditReadings.length === 0, `${tag}: a demo without an audit key leaves the Auditor nothing to count, and it says why`, s.auditEmpty ?? '')
   check(!s.strangerText.includes(tx(1).memo) && !s.strangerText.includes(tari(tx(1).amount)), `${tag}: the Stranger's card shows neither the memo nor the amount`)
   check(/Read inside this page with Bob's key\. The key was not sent anywhere\./.test(s.readingText), `${tag}: the Medium says it listened locally`)
@@ -616,9 +622,11 @@ async function walk(browser, { mode, w }) {
   // the wrong key, the other key
   for (const name of ['eve', 'carol', 'bob']) {
     await armReading(page)
+    const mk = mark(log)
     await page.click(`input[name=key][value="${name}"]`)
     s = await heard(page)
     expectHeard(s, tx(1), name, `${tag}: ${name}'s key on demo ${demoNo(tx(1))}`)
+    u7(await laterChecks(page, log, `${tag}: ${name}'s key on demo ${demoNo(tx(1))}`, { key: name, since: mk }), name, `${tag}: ${name}'s key`)
     if (name === 'eve') {
       // side by side: the three cards from their heading; one column: the end of the Medium card, where its answer is
       if (wide) await seeLenses(page)
@@ -636,16 +644,21 @@ async function walk(browser, { mode, w }) {
     else await page.keyboard.sendCharacter(value)
     return heard(page)
   }
+  const mt = mark(log)
   s = await typeKey(keys.bob.viewSecret)
   expectHeard(s, tx(1), 'bob', `${tag}: pasting Bob's secret into the own-key field`)
   check(s.checkedKey === null && /with your key/.test(s.readingText), `${tag}: a pasted key unchecks the demo keys and is called "your key"`)
+  await laterChecks(page, log, `${tag}: Bob's secret pasted into the own-key field`, { key: 'typedBob', since: mt })
   const stranger = randomBytes(32).toString('hex')
   s = await typeKey(stranger)
   expectHeard(s, tx(1), 'nobody', `${tag}: a random pasted key`)
+  await laterChecks(page, log, `${tag}: a random pasted key`, { key: 'typedRandom', since: mt })
   s = await typeKey('not a key')
   check(/A view secret is 64 hexadecimal characters/.test(s.ownHint) && s.empty === NO_KEY && s.readings.length === 0, `${tag}: a malformed key gets a hint and no reading`, s.ownHint)
+  await laterChecks(page, log, `${tag}: a malformed key`, { key: 'bad', since: mt })
   s = await typeKey('')
   check(s.ownHint === '' && s.empty === NO_KEY, `${tag}: clearing the field clears the hint`)
+  await laterChecks(page, log, `${tag}: the field cleared`, { key: 'none', since: mt })
   await typeKey(keys.bob.viewSecret)
   const probe = await page.evaluate((secret) => ({ href: location.href, storage: JSON.stringify(localStorage) + JSON.stringify(sessionStorage), cookie: document.cookie, state: JSON.stringify(history.state), body: document.body.innerText.includes(secret) }), keys.bob.viewSecret)
   const sent = log.requests.filter((r) => [r.url, r.post, r.headers].some((x) => x.includes(keys.bob.viewSecret) || x.includes(keys.bob.viewSecret.slice(0, 16)) || x.includes(stranger.slice(0, 16)))).length
@@ -663,6 +676,7 @@ async function walk(browser, { mode, w }) {
   check(s.shownId === tx(11).id && /revealed the amount on purpose/.test(s.status), `${tag}: the revealed-amount demo says so`)
   expectHeard(s, tx(11), 'bob', `${tag}: Bob's key on demo ${demoNo(tx(11))} (amount revealed)`)
   leaksChecks(s, tx(11), `${tag} demo ${demoNo(tx(11))}`)
+  await laterChecks(page, log, `${tag} demo ${demoNo(tx(11))}`)
 
   // more demos
   const more = live ? (w === 1280 ? [7] : []) : [2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -674,6 +688,7 @@ async function walk(browser, { mode, w }) {
     s = await heard(page)
     check(s.shownId === tx(n).id && s.checkedKey === tx(n).to, `${tag}: demo ${demoNo(tx(n))} shows its id and picks ${tx(n).to}'s key`)
     expectHeard(s, tx(n), tx(n).to, `${tag}: demo ${demoNo(tx(n))} read by ${tx(n).to}`)
+    await laterChecks(page, log, `${tag}: demo ${demoNo(tx(n))} read by ${tx(n).to}`)
   }
   await auditorWalk(page, tag, { live, w, wide, which: live ? (w === 1280 ? [1, 4] : [1]) : [1, 2, 3, 4] })
   if (!live) {
@@ -696,6 +711,7 @@ async function walk(browser, { mode, w }) {
   check(/^A transaction id is 64 hexadecimal characters/.test(s.status) && /error/.test(s.statusClass) && log.requests.length === before, `${tag}: a malformed id is refused without a request`)
   check(s.statusInView, `${tag}: the page brings the error message into view`)
   check(s.leaksEmpty === NO_LEAKS && s.auditEmpty === AUDIT_NO_TX && s.leaks.length === 0, `${tag}: after an error the leaks panel and the Auditor wait again, and show nothing from the earlier transaction`, `${s.leaksEmpty} | ${s.auditEmpty}`)
+  await laterChecks(page, log, `${tag}: after an error`)
 
   // the judge path is done: nothing may have gone wrong in the console
   // live: the browser itself notes each 404 the real indexer answers for a demo it dropped (the page handles it: saved copy); nothing else may appear
@@ -715,6 +731,7 @@ async function walk(browser, { mode, w }) {
   await page.click('#hold')
   await settled(page)
   await heard(page)
+  await laterDrawn(page, tx(1).id, LATER_KEYS.bob.phrase)
   await layout(page, `${tag} loaded`, { wide })
   await axe(page, `${tag} loaded (Bob reads demo ${demoNo(tx(1))}, no audit key)`)
   await armReading(page)
@@ -724,6 +741,7 @@ async function walk(browser, { mode, w }) {
   await settled(page)
   await heard(page)
   await counted(page)
+  await laterChecks(page, log, `${tag} all three ghosts at work (demo ${demoNo(hero(1))})`)
   await layout(page, `${tag} all three ghosts at work`, { wide })
   await axe(page, `${tag} all three ghosts at work (demo ${demoNo(hero(1))})`)
   s = await snap(page)
@@ -790,6 +808,196 @@ function leaksChecks(s, t, tag) {
   if (!item('fee').includes(tari(t.expected.fee))) bad.push('fee')
   check(bad.length === 0, `${tag}: the panel's token, audit proofs, amounts in the open and fee are this transaction's`, bad.join(', '))
   check(spent.length >= 1 && spent.every((c) => s.strangerText.includes(c)), `${tag}: the spent notes in the panel are the ones the Stranger's card shows (${spent.length})`)
+}
+
+// ---------- Ghosts from later: the Doppelganger (what a copied key reads) and the Revenant (what a computer that solves discrete logarithms would read) ----------
+// The keys the Medium can hold, with the words the Doppelganger uses to say which one it counted with. `reader` is the name ledger.json gives the key.
+const LATER_KEYS = {
+  bob: { reader: 'bob', phrase: "Bob's key, a demo key published with this page" },
+  carol: { reader: 'carol', phrase: "Carol's key, a demo key published with this page" },
+  eve: { reader: 'eve', phrase: "Eve's key, a demo key published with this page" },
+  auditor: { reader: 'auditor', phrase: 'the audit key, a demo key published with this page' },
+  typedBob: { reader: 'bob', phrase: 'your key, a demo key published with this page' }, // a published demo secret pasted into the field is still called "your key"
+  typedCarol: { reader: 'carol', phrase: 'your key, a demo key published with this page' },
+  typedRandom: { reader: 'nobody', phrase: 'your key, typed into the Medium' },
+}
+const LATER_NO_KEY = 'Counted now. No key is chosen in the Medium, so nothing is counted here.'
+const LATER_BAD_KEY = 'Counted now. The key typed into the Medium is not a valid view secret, so nothing is counted here.'
+const LATER_VIEW = /^Counted now\. In (.+) \((\d+) transactions?, (\d+) sealed notes?\), this key (?:opens (\d+) notes? worth (.+)\. The window shows (\d+) of them as spent\.|opens none of the notes\.)$/
+const LATER_AUDIT = /^Counted now\. In (.+), (\d+) of the (\d+) notes? of SEANCE carr(?:y|ies) an audit copy of the amount\. The key that opens them is the published demo audit key, the one the Auditor uses\.$/
+const LATER_AUDIT_ANY = /^Counted now\. In (.+), (\d+) of the (\d+) notes? of (.+) carr(?:y|ies) an audit copy of the amount\. (?:The key that opens them is the published demo audit key, the one the Auditor uses\.|This page does not hold that token's audit key\. The count needs none, because every note of an audited token is open to it\.)$/
+const LATER_NO_AUDIT = /^Counted now\. No note in (.+) carries an audit copy, so no audit key opens anything there\.$/
+const LATER_WHERE = { file: 'your file', recorded: 'the recorded demo payments and the one on the table', list: 'the latest transactions this page downloaded and the one on the table' }
+
+// In-page probe (serialised into the page): what the section shows, and nothing else.
+function laterProbe() {
+  const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]
+  const text = (el) => el.textContent.replace(/\s+/g, ' ').trim()
+  const visible = (el) => {
+    const r = el.getBoundingClientRect()
+    const cs = getComputedStyle(el)
+    return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none'
+  }
+  const sec = document.getElementById('later')
+  const dop = document.getElementById('later-doppelganger')
+  const rev = document.getElementById('later-revenant')
+  const bare = sec.cloneNode(true) // the section without its Simulation boxes: nothing left may be a simulated value
+  bare.querySelectorAll('.later-sim').forEach((e) => e.remove())
+  const simmed = $$('.later-sim-value, .later-sim-line', rev)
+  return {
+    heading: text(sec.querySelector('h2')),
+    rungs: $$('.later-rung', dop).map((r) => r.dataset.rung),
+    counts: Object.fromEntries($$('.later-rung', dop).map((r) => [r.dataset.rung, $$('.later-count', r).map(text)])),
+    key: dop.querySelector('.later-key') ? text(dop.querySelector('.later-key')) : null,
+    tiers: $$('.later-tier', rev).map((t) => t.dataset.tier),
+    fields: $$('.later-field', rev).length,
+    boxes: $$('.later-sim', rev).length,
+    values: $$('.later-sim-value', rev).map(text),
+    lines: $$('.later-sim-line', rev).map(text),
+    // every simulated line sits in a box whose first child is a visible label that says "Simulation."
+    unlabelled: simmed.filter((e) => {
+      const label = e.closest('.later-sim')?.firstElementChild
+      return !label || !label.classList.contains('later-sim-label') || !/^Simulation\. /.test(text(label)) || !visible(label)
+    }).length,
+    revWait: $$('.later-wait', rev).map(text),
+    bare: text(bare),
+    focusable: $$('a, button, input, select, textarea, summary, details, [tabindex]', sec).length,
+  }
+}
+
+// Waits until both ghosts have drawn for the transaction on the table (id '' = none), with the key named (phrase null = no key line), and the simulation, if there is one, is over.
+const laterDrawn = (page, id, phrase) =>
+  until(
+    page,
+    (w) => {
+      const dop = document.getElementById('later-doppelganger')
+      const rev = document.getElementById('later-revenant')
+      if (!dop || !rev || dop.dataset.tx !== w.id || rev.dataset.tx !== w.id) return false
+      const key = dop.querySelector('.later-key')?.textContent ?? ''
+      if (w.phrase === null ? key !== '' : !key.includes(w.phrase)) return false
+      return !rev.querySelector('.later-sim .later-wait')
+    },
+    { id, phrase },
+    60000,
+  )
+const laterText = async (page, id, phrase) => {
+  await laterDrawn(page, id, phrase)
+  return page.evaluate(() => document.getElementById('later').innerText)
+}
+// U7: on the recorded ledger (11 payments, 21 sealed notes) the view keys open Bob 5 and Carol 5, Eve none: the same numbers the Medium's reader gives note by note
+const U7 = { eve: 0, carol: 5, bob: 5 }
+const u7 = (r, name, tag) => r.kind === 'recorded' && check(r.transactions === 11 && r.sealed === 21 && r.opened === U7[name], `${tag}: U7: the view-key rung opens ${U7[name]} of the 21 sealed notes in the 11 recorded payments`, `${r.opened} of ${r.sealed} in ${r.transactions}`)
+const mark = (log) => ({ n: made(log).length, failed: log.failed.length }) // before an action: afterwards laterChecks says whether it caused a request
+
+// What the ladder should count, worked out from ledger.json (for whom each recorded note was sealed), not from the page's reader. `kind`: where the window comes from:
+// the 11 recorded demo payments plus the one on the table, or the one file. A transaction that is not a demo has no known reader (the demo keys open none of it).
+function laterTruth(kind, id, notes, reader) {
+  const onTable = [...ledger.txs, ...ledger.hero].find((t) => t.id === id)
+  const base = kind === 'recorded' ? ledger.txs : []
+  const win = onTable && base.includes(onTable) ? base : [...base, onTable ?? { strangerNotes: notes }]
+  const outs = (t) => t.expected?.outputs ?? []
+  const resource = (t) => (ledger.hero.includes(t) ? ledger.auditor.resource : TARI_RESOURCE)
+  const mine = win.flatMap((t) => outs(t).filter((o) => o.reader === reader).map((o) => ({ resource: resource(t), value: BigInt(o.value) })))
+  const sums = new Map()
+  for (const m of mine) sums.set(m.resource, (sums.get(m.resource) ?? 0n) + m.value)
+  const audited = win.filter((t) => ledger.hero.includes(t))
+  return {
+    transactions: win.length,
+    sealed: win.reduce((n, t) => n + (t.expected ? outs(t).length : t.strangerNotes), 0),
+    opened: mine.length,
+    worth: [...sums].map(([res, v]) => amountOf(res, v)).sort(),
+    audited: audited.reduce((n, t) => n + outs(t).filter((o) => o.auditor != null).length, 0),
+    auditedOf: audited.reduce((n, t) => n + outs(t).length, 0),
+  }
+}
+
+// What the simulation should print for a demo payment: the notes its recipient's demo key opens and the amounts its audit key counts, as ledger.json records them.
+function laterSim(t) {
+  const n = t.expected.outputs.length
+  const outs = t.expected.outputs
+  return [
+    ...outs.flatMap((o, i) => (o.reader === t.to ? [`Sealed note ${i + 1} of ${n} opens: ${money(t, o.value)}. ${o.memo ? `Memo: “${o.memo}”` : 'No memo.'}`] : [])),
+    ...outs.flatMap((o, i) => (o.auditor != null ? [`Sealed note ${i + 1} of ${n} counted: ${money(t, o.auditor)}. Memo: shut.`] : [])),
+  ]
+}
+
+// The window of a mocked indexer's list: its transactions and sealed notes, counted by the page's own parser (the one that reads a file).
+const listed = (items) => ({ transactions: items.length, sealed: items.reduce((n, x) => n + parseTransaction(x).outputs.length, 0) })
+
+/**
+ * The section "Ghosts from later" for the transaction on the table. `key`: a LATER_KEYS name, 'checked' (whichever demo key the Medium has ticked), 'none' (no key chosen) or 'bad' (a typed key that is not a view secret); ignored with nothing on the table;
+ * `since`: a mark() taken before the action that led here (the section must have caused no request since); `list`: {transactions, sealed} when the window is a mocked indexer's list.
+ * Returns what the view-key line counted, for the checks that compare keys.
+ */
+async function laterChecks(page, log, tag, { key = 'checked', since = null, list = null } = {}) {
+  const s = await snap(page)
+  const id = s.shownId ?? ''
+  const k = key === 'checked' ? LATER_KEYS[s.checkedKey] : LATER_KEYS[key]
+  if (id && key !== 'none' && key !== 'bad' && !k) throw new Error(`no key to count with (${key}, ticked in the Medium: ${s.checkedKey})`)
+  await laterDrawn(page, id, id && k ? k.phrase : null)
+  const p = await page.evaluate(laterProbe)
+  const empty = !id
+  const kind = empty ? 'none' : list ? 'list' : /^From your file/.test(s.source ?? '') ? 'file' : /^Recorded:/.test(s.source ?? '') ? 'recorded' : 'live'
+  const demo = [...ledger.hero, ...ledger.txs].find((t) => t.id === id)
+  const what = `${tag}: Ghosts from later`
+  const counted = (rung) => p.counts[rung] ?? []
+  // what is drawn: the heading, the four rungs in order, the three tiers and the field table (with nothing on the table: none of it, and no count left from an earlier transaction)
+  const drawn = p.heading === 'Ghosts from later' && p.rungs.join() === 'none,view,audit,spend'
+  const body = empty ? p.tiers.length === 0 && p.fields === 0 && Object.values(p.counts).every((c) => c.length === 0) && p.key === null : p.tiers.join() === '1,2,3' && p.fields >= 1 && counted('view').length === 1 && counted('none').length === 0 && counted('spend').length === 0
+  check(drawn && body && p.focusable === 0, `${what}: the Doppelganger's four rungs in order, ${empty ? 'and with nothing on the table no count and no tier left from an earlier transaction' : "the Revenant's three tiers and its field table"}; no link, button or field in it`, `${p.rungs.join()} | tiers ${p.tiers.join()} | ${p.fields} fields | ${p.focusable} focusable`)
+  const out = { kind, transactions: null, sealed: null, opened: null }
+  if (!empty) {
+    // the view-key rung: counted with the key chosen in the Medium, with the page's own reader
+    const line = counted('view')[0] ?? ''
+    if (!k) {
+      check(line === (key === 'bad' ? LATER_BAD_KEY : LATER_NO_KEY) && p.key === null, `${what}: with ${key === 'bad' ? 'a typed key that is not a view secret' : 'no key chosen'} the view-key rung counts nothing and says so`, line)
+    } else {
+      const m = LATER_VIEW.exec(line)
+      Object.assign(out, { transactions: Number(m?.[2]), sealed: Number(m?.[3]), opened: Number(m?.[4] ?? 0) })
+      const words = m?.[1]
+      let ok = !!m && p.key?.includes(k.phrase)
+      let detail = line
+      if (ok && (kind === 'recorded' || kind === 'file')) {
+        const want = laterTruth(kind, id, s.notes, k.reader)
+        const spent = Number(m[6] ?? 0)
+        ok = words === LATER_WHERE[kind] && out.transactions === want.transactions && out.sealed === want.sealed && out.opened === want.opened && spent === 0 && (want.opened === 0 || JSON.stringify(m[5].split(' and ').sort()) === JSON.stringify(want.worth))
+        detail = `${out.opened} of ${out.sealed} in ${out.transactions}; ledger says ${want.opened} of ${want.sealed} in ${want.transactions} (${want.worth.join(' and ') || 'nothing'}) | ${line.slice(0, 100)}`
+      } else if (ok && kind === 'list') {
+        ok = words === LATER_WHERE.list && out.transactions === list.transactions && out.sealed === list.sealed && out.opened <= out.sealed
+        detail = `${out.opened} of ${out.sealed} in ${out.transactions}; the mocked list holds ${list.sealed} notes in ${list.transactions} | ${line.slice(0, 100)}`
+      } else if (ok) {
+        // the live window is whatever the real indexer's list holds: only the arithmetic can be checked
+        ok = [LATER_WHERE.list, 'the transaction on the table'].includes(words) && out.transactions >= 1 && out.opened <= out.sealed && Number(m[6] ?? 0) <= out.opened
+      }
+      check(ok, `${what}: the view-key rung counts with ${k.phrase.split(',')[0]}, says so, and the numbers are ${kind === 'live' ? 'consistent (the live window is the indexer\'s list)' : kind === 'list' ? "those of the indexer's list" : "the ledger's"}`, detail)
+    }
+    // the audit-key rung: a count of the notes that carry an audit copy, no key tried
+    const lines = counted('audit')
+    let aok
+    let had = ''
+    if (kind === 'recorded' || kind === 'file') {
+      const want = laterTruth(kind, id, s.notes, 'nobody')
+      const a = LATER_AUDIT.exec(lines[0] ?? '')
+      aok = lines.length === 1 && (want.audited > 0 ? !!a && a[1] === LATER_WHERE[kind] && Number(a[2]) === want.audited && Number(a[3]) === want.auditedOf : LATER_NO_AUDIT.test(lines[0]))
+      had = ` (${want.audited} of ${want.auditedOf} here)`
+    } else aok = lines.length >= 1 && lines.every((l) => LATER_AUDIT_ANY.test(l) || LATER_NO_AUDIT.test(l)) // the live window is the indexer's list: only the shape of each line can be checked
+    check(aok, `${what}: the audit-key rung counts the notes that carry an audit copy${had}, with no key tried`, lines.join(' | ').slice(0, 220))
+  }
+  // the Revenant: a demo payment is read with the demo keys inside a box whose first line says "Simulation."; any other transaction gets the table and the tiers, and no value
+  let sim
+  if (demo) {
+    const name = demo.to[0].toUpperCase() + demo.to.slice(1)
+    sim = p.boxes === 1 && JSON.stringify(p.values) === JSON.stringify(laterSim(demo)) && p.lines[0] === `Tier 2. The demo view key of ${name} stands in for the solved view key.` && p.lines.some((l) => l.startsWith('Tier 3. The demo audit key stands in for the solved audit key.')) && p.unlabelled === 0
+  } else {
+    sim = p.boxes === 0 && p.values.length === 0 && p.lines.length === 0 && p.unlabelled === 0 && (empty ? p.revWait.length === 1 : p.revWait.some((w) => /^Nothing is simulated for this transaction/.test(w)))
+  }
+  const loose = /Sealed note \d+ of \d+ (?:opens|counted)|Memo: “/.test(p.bare) // a simulated value outside every Simulation box
+  check(sim && !loose, `${what}: ${demo ? `the simulation of demo ${demoNo(demo)} prints ${laterSim(demo).length} values, each in a box labelled "Simulation."` : 'a transaction that is not a demo gets the table and the tiers and no simulated value'}; none outside a labelled box`, `${p.boxes} box | ${p.values.length} values | ${p.unlabelled} unlabelled | ${loose ? 'a value outside a box' : 'no loose value'} | ${JSON.stringify(p.values).slice(0, 160)}`)
+  if (since) {
+    const now = mark(log)
+    check(now.n === since.n && now.failed === since.failed, `${what}: drawing it made 0 new requests and 0 failed ones`, `${now.n - since.n} new, ${now.failed - since.failed} failed`)
+  }
+  return out
 }
 
 // ---------- the Auditor, the third ghost ----------
@@ -947,15 +1155,18 @@ async function fallbackRun(browser, w) {
   check(asked() === 1, `${tag}: the indexer was asked once (the first try), then left alone`, `${asked()} requests`)
   const failedRow = await until(page, () => [...document.querySelectorAll('#net-rows tr')].some((tr) => tr.children[2].textContent.includes('indexer') && tr.children[6].textContent === 'failed'), undefined, 5000).then(() => true, () => false)
   check(failedRow, `${tag}: the ghost log shows that one request to the indexer as failed`)
+  const mk = mark(log)
   await armReading(page)
   await page.click('input[name=key][value="carol"]')
   s = await heard(page)
   expectHeard(s, tx(2), 'carol', `${tag}: Carol's key reads demo ${demoNo(tx(2))} from the recording`)
+  u7(await laterChecks(page, log, `${tag}: Carol's key, demo ${demoNo(tx(2))}`, { since: mk }), 'carol', tag)
   await page.select('#demo', tx(1).id)
   await page.click('#hold')
   await settled(page)
   s = await snap(page)
   check(s.shownId === tx(1).id && asked() === 1, `${tag}: further lookups are answered from the recording without asking again`, `${asked()} requests`)
+  const mh = mark(log)
   await armReading(page)
   await armAudit(page)
   await page.select('#demo', hero(4).id)
@@ -965,6 +1176,7 @@ async function fallbackRun(browser, w) {
   s = await counted(page)
   check(asked() === 1, `${tag}: the Auditor counts a demo with an audit key from the recording too, with no new request`, `${asked()} requests`)
   auditReads(s, hero(4), `${tag}: demo ${demoNo(hero(4))}, the audit key`)
+  await laterChecks(page, log, `${tag}: demo ${demoNo(hero(4))}`, { since: mh })
   const bad = consoleBad(log).filter((m) => !(m.type === 'error' && m.url.startsWith(INDEXER_URL) && /Failed to load resource/.test(m.text)))
   check(bad.length === 0 && log.pageErrors.length === 0, `${tag}: no console error except the browser's own note that the indexer request failed`, bad.map((m) => m.text).concat(log.pageErrors).join(' | '))
   await netlogChecks(page, log, tag)
@@ -1041,10 +1253,12 @@ async function forgottenRun(browser, w) {
   check(/^The public indexer no longer holds this transaction, so this is the copy saved on /.test(s.status) && /Anything you paste is still looked up live\./.test(s.status) && /info/.test(s.statusClass) && !/warn|error/.test(s.statusClass), `${tag}: the status line says the same, calmly (not a warning)`, s.status.slice(0, 100))
   checkLinks(s, tx(2).id, tag)
   check(!s.strangerLinks.some((a) => a.href.startsWith(`${EXPLORER_URL}/tx/`)) && s.mediumHref !== explorerTx(tx(2).id), `${tag}: no button to an explorer page that would be empty`)
+  const mk = mark(log)
   await armReading(page)
   await page.click(`input[name=key][value="${tx(2).to}"]`)
   s = await heard(page)
   expectHeard(s, tx(2), tx(2).to, `${tag}: the saved copy is a whole seance: ${tx(2).to}'s key reads demo ${demoNo(tx(2))}`)
+  u7(await laterChecks(page, log, `${tag}: the saved copy of demo ${demoNo(tx(2))}`, { since: mk }), tx(2).to, tag)
   await seeLenses(page)
   await shot(page, `seance-${w}-forgotten.png`)
   await layout(page, `${tag}`, { wide })
@@ -1079,6 +1293,7 @@ async function forgottenRun(browser, w) {
   check(asked.length === 4 && asked[3] === UNKNOWN && lists === 1 && s.status === NOT_FOUND && /error/.test(s.statusClass) && s.badge === 'Live' && s.shownId === null && !s.ask, `${tag}: "Ask for it anyway" asks for that id once and gets the indexer's "not found", with the reason; the page is still live`, `${asked.length} by id, ${lists} list | ${s.badge}: ${s.status.slice(0, 80)}`)
   // an id the list does hold is read from the list: no request for it, and the list (kept for a minute) is not fetched again
   const listedId = crowd[1].transaction_id
+  const ml = mark(log)
   await page.$eval('#txid', (el) => el.select())
   await page.keyboard.sendCharacter(listedId)
   await page.click('#look')
@@ -1086,6 +1301,7 @@ async function forgottenRun(browser, w) {
   s = await snap(page)
   check(s.shownId === listedId && LISTED.test(s.source ?? '') && s.badge === 'Live' && asked.length === 4 && lists === 1, `${tag}: an id the list holds is read from the list: no request for it, and the list is not fetched again`, `${s.source} | ${asked.length} by id, ${lists} list`)
   checkLinks(s, listedId, `${tag}: the id found in the list`)
+  await laterChecks(page, log, `${tag}: the id found in the list`, { key: s.checkedKey ? 'checked' : 'none', list: listed(crowd), since: ml })
   // a dropped demo with an audit key: all three ghosts work on the copy, after the error
   await armReading(page)
   await armAudit(page)
@@ -1098,6 +1314,7 @@ async function forgottenRun(browser, w) {
   expectHeard(s, hero(1), hero(1).to, `${tag}: demo ${demoNo(hero(1))}: ${hero(1).to}'s key`)
   auditReads(s, hero(1), `${tag}: demo ${demoNo(hero(1))}: the audit key`)
   checkLinks(s, hero(1).id, `${tag}: demo ${demoNo(hero(1))}`)
+  await laterChecks(page, log, `${tag}: the saved copy of demo ${demoNo(hero(1))}`)
   // the prompt's other button: a saved file, read in the browser with no request at all
   await page.$eval('#txid', (el) => el.select())
   await page.keyboard.sendCharacter('cd'.repeat(32))
@@ -1144,6 +1361,8 @@ async function quietRun(browser) {
   check(/^The latest live transactions held no private transfer, so this one is recorded\./.test(s.status) && /warn/.test(s.statusClass) && !s.ask, `${tag}: the status line says so, as a warning`, `${s.statusClass}: ${s.status.slice(0, 90)}`)
   check(lists === 1 && other.length === 0, `${tag}: one request, for the list, and none for an id`, `${lists} list, ${other.length} other`)
   checkLinks(s, s.shownId, tag)
+  await laterChecks(page, log, tag, { key: s.checkedKey ? 'checked' : 'none' })
+  check(lists === 1 && other.length === 0, `${tag}: and the Ghosts from later asked for nothing: still one request, for the list`, `${lists} list, ${other.length} other`)
   await netlogChecks(page, log, tag)
   const csp = await cspSeen(page, log)
   check(csp.length === 0 && log.pageErrors.length === 0 && consoleBad(log).length === 0, `${tag}: 0 Content Security Policy violations, no page error, no console error`, csp.concat(log.pageErrors, consoleBad(log).map((m) => m.text)).slice(0, 2).join(' | '))
@@ -1181,10 +1400,12 @@ async function fileRun(browser, w) {
   auditReads(s, t, `${tag}: the audit key`)
   leaksChecks(s, t, `${tag}: the leaks panel`)
   checkLinks(s, t.id, tag)
+  await laterChecks(page, log, `${tag}: Bob's key`)
   await armReading(page)
   await page.click('input[name=key][value="carol"]')
   s = await heard(page)
   expectHeard(s, t, 'carol', `${tag}: Carol's key reads the file's transaction`)
+  await laterChecks(page, log, `${tag}: Carol's key`, { key: 'carol' })
   none('all three ghosts read the file')
   await seeLenses(page)
   await shot(page, `seance-${w}-file.png`)
@@ -1211,8 +1432,18 @@ async function fileRun(browser, w) {
     s = await openFile(page, join(dir, name))
     check(s.status === message && /error/.test(s.statusClass) && s.shownId === null && s.netFile === null && !s.ask, `${tag}: a file that is ${what}: the page says so, in these words, and shows no transaction`, s.status.slice(0, 80))
   }
+  await laterChecks(page, log, `${tag}: after four files that cannot be read`)
   rmSync(dir, { recursive: true, force: true })
   none('four files that cannot be read')
+  // a file that holds a transaction nobody made for this page (an item of the indexer's list): the table and the tiers, and not one simulated value
+  const other = mkdtempSync(join(tmpdir(), 'seance-smoke-stranger-'))
+  const strangerFile = join(other, 'stranger.json')
+  writeFileSync(strangerFile, JSON.stringify(ledger.recent.transactions[1]))
+  s = await openFile(page, strangerFile)
+  rmSync(other, { recursive: true, force: true })
+  check(s.badge === 'File' && s.shownId === ledger.recent.transactions[1].transaction_id && !OURS.has(s.shownId) && s.source?.startsWith('From your file'), `${tag}: a file that holds a stranger's transaction opens, marked "File"`, `${s.badge} | ${String(s.shownId).slice(0, 8)}`)
+  await laterChecks(page, log, `${tag}: a stranger's transaction from a file`, { key: s.checkedKey ? 'checked' : 'none' })
+  none("a stranger's transaction from a file")
   s = await openFile(page, SAMPLE_FILE)
   check(s.badge === 'File' && s.shownId === t.id && s.netFile === 'Since you opened your file: 0 requests.', `${tag}: after the errors the good file opens again, and the log still says 0 requests`, `${s.badge} | ${s.netFile}`)
   none('after the errors')
@@ -1264,6 +1495,7 @@ async function offlineCopyRun(browser, w) {
   expectHeard(s, hero(1), 'bob', `${tag}: the Medium, with Bob's key (already in hand), reads demo 1`)
   auditReads(s, hero(1), `${tag}: the Auditor, with the audit key, counts demo 1`)
   poltergeistChecks(s, tag)
+  await laterChecks(page, log, `${tag}: first screen`)
 
   // the sample file, then the recipient's published key typed into the page
   s = await readSampleAsCarol(page)
@@ -1271,6 +1503,7 @@ async function offlineCopyRun(browser, w) {
   check(s.checkedKey === null && /with your key/.test(s.readingText), `${tag}: a typed key unchecks the demo keys and is called "your key"`)
   expectHeard(s, t, 'carol', `${tag}: the typed key reads the file's transaction`)
   auditReads(s, t, `${tag}: the audit key counts the file's transaction`)
+  await laterChecks(page, log, `${tag}: the file, Carol's key typed`, { key: 'typedCarol' })
   leaksChecks(s, t, `${tag}: the leaks panel`)
   checkLinks(s, t.id, tag)
   check(s.netHead === 'This page sent 0 requests to 0 hosts; 0 named a transaction id; your keys were in none of them.' && !s.netLeak && s.netFile === 'Since you opened your file: 0 requests.' && s.netRows.length === 0, `${tag}: the ghost log says 0 requests, 0 hosts, no key in any request`, `${s.netHead} | ${s.netFile}`)
@@ -1282,11 +1515,14 @@ async function offlineCopyRun(browser, w) {
   if (wide) {
     const { page: twin } = await open(browser, { w })
     const online = await readSampleAsCarol(twin)
+    const laterOnline = await laterText(twin, t.id, LATER_KEYS.typedCarol.phrase)
     await twin.close()
+    const laterOffline = await laterText(page, t.id, LATER_KEYS.typedCarol.phrase)
     const a = ghostTexts(s)
     const b = ghostTexts(online)
     const differ = Object.keys(a).filter((k) => JSON.stringify(a[k]) !== JSON.stringify(b[k]))
     check(differ.length === 0 && a.stranger.length > 0 && a.reading.length > 0 && a.audit.length > 0 && a.polt.length > 0, `${tag}: the Stranger, the Medium, the Auditor, the leaks panel and the Poltergeist say the same words as the online build on the same file and key`, `differ: ${differ.join(',') || 'none'}; ${a.stranger.length + a.reading.length + a.audit.length + a.polt.length} characters compared`)
+    check(laterOnline === laterOffline && laterOffline.length > 1000, `${tag}: Ghosts from later: the section says the same words as the online build on the same file and key`, `${laterOffline.length} characters compared`)
   }
 
   // everything above made no request at all, and the policy had nothing to refuse
@@ -1341,6 +1577,8 @@ async function offlineServedRun(browser) {
   check(asked.length === 1 && asked[0] === url && log.failed.length === 0, `${tag}: the debugging protocol saw that one request and no other`, `${asked.length} seen`)
   const csp = await cspSeen(page, log)
   check(csp.length === 0 && log.pageErrors.length === 0 && consoleBad(log).length === 0, `${tag}: 0 Content Security Policy violations, no page error, no console line`, csp.concat(log.pageErrors, consoleBad(log).map((m) => m.text)).slice(0, 2).join(' | '))
+  await laterChecks(page, log, tag)
+  check(log.requests.length === 1 && log.failed.length === 0, `${tag}: the Ghosts from later drew with no request: still the one request for the page itself, none failed`, `${log.requests.length} seen`)
   await page.close()
 }
 

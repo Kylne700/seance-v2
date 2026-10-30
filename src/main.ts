@@ -6,6 +6,7 @@ import { createData, demoKeys, demos, LookupError, recordedWorld, savedOn, type 
 import { listen, viewSecretProblem } from './decrypt.ts'
 import { clear, h } from './dom.ts'
 import { outcomeLabel, plural, short } from './format.ts'
+import { createLater } from './later.ts'
 import { createNetlog } from './netlog.ts'
 import { poltergeist } from './poltergeist.ts'
 import templateSource from '../template/src/lib.rs?raw'
@@ -59,6 +60,7 @@ let busy = false
 let loadSeq = 0 // answers that arrive after a newer request are dropped
 let hearSeq = 0
 let auditSeq = 0
+const later = createLater($('later-body'), data.latest) // the ghosts from later: drawn from what the page already holds, they ask nobody
 
 const keyNames = Object.keys(demoKeys)
 const nameOf = (key: string): string => demoKeys[key].label.split(' (')[0]
@@ -118,7 +120,10 @@ async function hear(): Promise<void> {
     const readings = await listen(key.secret, all)
     hearing = readings.length ? { kind: 'read', who: key.who, readings, all } : { kind: 'silence' }
   }
-  if (mine === hearSeq) renderReading(reading, hearing)
+  if (mine === hearSeq) {
+    renderReading(reading, hearing)
+    void later.show(current, key)
+  }
 }
 
 // What the auditor counts, from the audit key chosen: only the amounts, only when a note carries a proof, in slices so the page stays awake.

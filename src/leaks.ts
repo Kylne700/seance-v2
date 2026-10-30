@@ -46,7 +46,7 @@ export function leaks(v: TxView): Leak[] {
       mono: false,
       values: v.statements.flatMap((s, n) => (proven(s) ? [`${tag(n)}${proven(s)} of ${plural(s.outputs.length, 'sealed note')} ${s.outputs.length === 1 ? 'carries' : 'carry'} an audit proof`] : [])),
       caption: v.statements.some(proven)
-        ? "Whoever holds the token's audit key can read the amount of each note that carries a proof. That key cannot spend a note or read its memo."
+        ? "Whoever holds the token's audit key can read the amount of each note that carries a proof, not its memo. It cannot spend if it is a fresh key used for nothing else (by the code; not tried)."
         : 'None here. A token can be made with an audit key, and then each of its notes carries a proof that only that key opens.',
     },
     {
