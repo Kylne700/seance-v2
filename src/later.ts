@@ -94,7 +94,11 @@ export function createLater(body: HTMLElement, latest: () => Promise<TxView[]>):
     const mine = ++doppelSeq
     const alive = (): boolean => mine === doppelSeq
     const head = [h('h3', null, 'The Doppelganger'), p('later-how', DOPPELGANGER)]
-    if (!shown) return fill(doppelganger, ...head, wait('Nothing is on the table yet, so there is nothing to count. Call a transaction up above.'), ladder({}))
+    if (!shown) {
+      fill(doppelganger, ...head, wait('Nothing is on the table yet, so there is nothing to count. Call a transaction up above.'), ladder({}))
+      doppelganger.dataset.tx = ''
+      return
+    }
     recorded ??= recordedWorld().views
     const txs = windowOf(shown.view, shown.mode, { recorded, latest: shown.mode === 'live' ? await latest() : [] })
     const where = windowWords(shown.mode, txs.length > 1)
@@ -116,6 +120,7 @@ export function createLater(body: HTMLElement, latest: () => Promise<TxView[]>):
         audit: auditSentences(auditCounts(txs), where).map(counted),
       }),
     )
+    doppelganger.dataset.tx = shown.view.id // the transaction this draw is for (the smoke test waits for it)
   }
 
   async function drawRevenant(shown: Shown | null): Promise<void> {
@@ -125,7 +130,11 @@ export function createLater(body: HTMLElement, latest: () => Promise<TxView[]>):
     revenantFor = id
     const mine = ++revenantSeq
     const head = [h('h3', null, 'The Revenant'), p('later-how', INTRO)]
-    if (!v) return fill(revenant, ...head, wait('Nothing is on the table yet, so there is nothing to read. Call a transaction up above.'))
+    if (!v) {
+      fill(revenant, ...head, wait('Nothing is on the table yet, so there is nothing to read. Call a transaction up above.'))
+      revenant.dataset.tx = ''
+      return
+    }
     const keys = standIns(v, demos, demoKeys)
     // the box that carries the Simulation label is made only for a demo payment; for any other transaction there is no box and no value
     const box = h('div', { class: 'later-sim' }, p('later-sim-label', SIMULATION), wait('Reading the demo payment with the demo keys…'))
@@ -142,6 +151,7 @@ export function createLater(body: HTMLElement, latest: () => Promise<TxView[]>):
       h('ul', { class: 'later-lines' }, ...separate(v).map((s) => h('li', null, s))),
       keys ? box : wait('Nothing is simulated for this transaction: it is not one of the demo payments, and the demo keys open only those. No value is shown.'),
     )
+    revenant.dataset.tx = v.id
     if (!keys) return
     const sim = await simulate(v, keys, () => mine === revenantSeq)
     if (!sim || mine !== revenantSeq) return
