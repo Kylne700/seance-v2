@@ -1,5 +1,6 @@
 import { audit, audited } from './auditor.ts'
 import { txFromHash } from './chain.ts'
+import { checkConnection } from './conncheck.ts'
 import { INDEXER_URL } from './config.ts'
 import { createData, demoKeys, demos, LookupError, recordedWorld, savedOn, type Demo, type Shown } from './data.ts'
 import { listen, viewSecretProblem } from './decrypt.ts'
@@ -286,6 +287,21 @@ ownKey.addEventListener('input', () => {
   if (ownKey.value.trim()) checkRadio('key', null)
   void hear()
 })
+
+// The connection check (src/conncheck.ts): one request per press and none on load. Its answer is one sentence; the rest of Cloudflare's reply is dropped there.
+const checkBtn = $('check-conn')
+const checkOut = $('check-out')
+let checking = false
+checkBtn.addEventListener('click', async () => {
+  if (checking || offline) return // aria-disabled does not stop a click: a second press while one request is out is ignored here
+  checking = true
+  checkBtn.setAttribute('aria-disabled', 'true')
+  checkOut.textContent = 'Sending one request…'
+  checkOut.textContent = await checkConnection() // never rejects: a failure comes back as a sentence
+  checking = false
+  checkBtn.removeAttribute('aria-disabled')
+})
+checkBtn.removeAttribute('aria-disabled') // shipped as not ready, like the other buttons
 
 // Ready. index.html ships a loading line and buttons marked not ready; clear both here, before the address is read (it may start a load).
 // "Look at it" also ships `disabled`: a click or Enter on a submit button before this point makes the browser cancel the page's pending code (the form is blocked by the CSP, the load is not resumed).

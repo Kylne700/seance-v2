@@ -61,7 +61,7 @@ const FILE_SOURCE = 'From your file: nothing was asked of any server. This page 
 const FILE_BADGE_TEXT = 'Showing a file you opened. Nothing was asked of any server for it.'
 const ASK_BUTTONS = 'Ask for it anyway|Open a saved transaction file'
 // What the ghost log says each kind of request lets the other end learn.
-const REVEALS = { page: 'Your IP address, the time and which file you asked for.', list: 'Your IP address, the time and the headers your browser adds. No transaction id.', transaction: 'Your IP address, the time and this id.' }
+const REVEALS = { page: 'Your IP address, the time and which file you asked for.', list: 'Your IP address, the time and the headers your browser adds. No transaction id.', transaction: 'Your IP address, the time and this id.', check: 'Your IP address, the time and the headers your browser adds. No transaction id. This is the connection check you pressed.' }
 // The policy v1 shipped, word for word. v2 adds nothing to it.
 const CSP = "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self'; connect-src https://esme-indexer-a.ootle.tari.com; base-uri 'none'; form-action 'none'"
 const SAMPLE_FILE = join(APP, 'examples/saved-transaction.json') // the file the README offers
@@ -272,6 +272,9 @@ const refresh = (r) => r.type === 'other' && new URL(r.url).host === INDEXER_HOS
 const made = (log) => web(log).filter((r) => !refresh(r))
 const refreshed = (log) => web(log).filter(refresh).length
 const idPath = /^\/transactions\/[0-9a-f]{64}$/
+const TRACE_PATH = '/cdn-cgi/trace' // the one request of the connection check
+// K in the ghost log's headline, worked out again from what the debugging protocol saw: a 64-character hexadecimal id in the path, or as a last_id value
+const named = (log) => made(log).filter((r) => { const u = new URL(r.url); return [decodeURIComponent(u.pathname), ...u.searchParams.getAll('last_id')].some((v) => /[0-9a-f]{64}/i.test(v)) }).length
 // How often the indexer was asked, and for which ids: the list is the request that names no id.
 const indexerCalls = (log) => {
   const mine = made(log).map((r) => new URL(r.url)).filter((u) => u.host === INDEXER_HOST)
@@ -420,12 +423,12 @@ async function netlogChecks(page, log, tag) {
   const wanted = () =>
     made(log)
       .map((r) => new URL(r.url))
-      .map((u) => (u.host === OWN ? `page ${u.pathname}${u.search}` : u.host === INDEXER_HOST && idPath.test(u.pathname) ? `transaction ${short(u.pathname.split('/').pop(), 6)}` : u.host === INDEXER_HOST && u.pathname === '/transactions/recent' ? `list ${u.pathname}${u.search}` : `other ${u.host}${u.pathname}`))
+      .map((u) => (u.host === OWN ? `page ${u.pathname}${u.search}` : u.host === INDEXER_HOST && idPath.test(u.pathname) ? `transaction ${short(u.pathname.split('/').pop(), 6)}` : u.host === INDEXER_HOST && u.pathname === '/transactions/recent' ? `list ${u.pathname}${u.search}` : u.host === INDEXER_HOST && u.pathname === TRACE_PATH ? `check ${u.pathname}` : `other ${u.host}${u.pathname}`))
       .sort()
   // A list row without sizes (the page's wrapper always knows them) is a request the page did not make: the browser's own refresh, which Chromium reports to the page's Resource Timing.
   const listed = (rows) =>
     rows
-      .map(({ cells: [, , host, path, sent] }) => (host === OWN ? `page ${path}` : host === INDEXER_HOST && /^\/transactions\/[0-9a-f]{6}…[0-9a-f]{6}$/.test(path) ? `transaction ${path.split('/').pop()}` : host === INDEXER_HOST && path.startsWith('/transactions/recent') ? `${sent === 'unknown' ? 'refresh' : 'list'} ${path}` : `other ${host}${path}`))
+      .map(({ cells: [, , host, path, sent] }) => (host === OWN ? `page ${path}` : host === INDEXER_HOST && /^\/transactions\/[0-9a-f]{6}…[0-9a-f]{6}$/.test(path) ? `transaction ${path.split('/').pop()}` : host === INDEXER_HOST && path.startsWith('/transactions/recent') ? `${sent === 'unknown' ? 'refresh' : 'list'} ${path}` : host === INDEXER_HOST && path === TRACE_PATH ? `check ${path}` : `other ${host}${path}`))
       .sort()
   const madeRows = (rows) => listed(rows).filter((x) => !x.startsWith('refresh '))
   let s = await snap(page)
@@ -441,10 +444,10 @@ async function netlogChecks(page, log, tag) {
   const seenRefresh = refreshed(log)
   check(unequal.length === 0 && refreshRows <= seenRefresh, `${tag}: the ghost log lists the ${want.length} requests the page made, one row each, as the debugging protocol saw them`, `log ${got.length}, protocol ${want.length}${seenRefresh ? `; the browser also refreshed its saved list on its own ${seenRefresh} time${seenRefresh === 1 ? '' : 's'} (a request no page code made), and the log showed ${refreshRows} of those as a row without sizes` : ''}${unequal.length || refreshRows > seenRefresh ? `; log vs protocol: ${unequal.slice(0, 3).map((x) => `${x} x${times(got, x)} vs x${times(want, x)}`).join(', ')}; rows without sizes: ${refreshRows}` : ''}`)
   const hosts = new Set(s.netRows.map((r) => r.cells[2]))
-  check(s.netHead === `This page sent ${plural(s.netRows.length, 'request')} to ${plural(hosts.size, 'host')}; your keys were in none of them.` && !s.netLeak, `${tag}: the headline counts them (${s.netRows.length} to ${hosts.size}) and says the keys were in none of them`, s.netHead)
+  check(s.netHead === `This page sent ${plural(s.netRows.length, 'request')} to ${plural(hosts.size, 'host')}; ${named(log)} named a transaction id; your keys were in none of them.` && !s.netLeak, `${tag}: the headline counts them (${s.netRows.length} to ${hosts.size}, ${named(log)} naming an id) and says the keys were in none of them`, s.netHead)
   const wrong = s.netRows.filter((r) => {
     const [, , host, path, , , , learns] = r.cells
-    const kind = host === OWN ? 'page' : path.startsWith('/transactions/recent') ? 'list' : 'transaction'
+    const kind = host === OWN ? 'page' : path.startsWith('/transactions/recent') ? 'list' : path === TRACE_PATH ? 'check' : 'transaction'
     return !learns.startsWith(REVEALS[kind])
   })
   check(wrong.length === 0, `${tag}: every row says what that host learns: for the list "${REVEALS.list}", for an id "${REVEALS.transaction}"`, wrong.map((r) => r.cells.join(' / ')).slice(0, 2).join(' | '))
@@ -1254,9 +1257,9 @@ async function offlineCopyRun(browser, w) {
   const shown = await page.evaluate(() => {
     const hidden = (id) => document.getElementById(id).offsetParent === null
     const seen = (sel) => [...document.querySelectorAll(sel)].filter((e) => e.offsetParent !== null).map((e) => e.innerText).join(' ')
-    return { hid: ['txid', 'look', 'summon', 'mode-switch', 'ask', 'ask-anyway', 'ask-file'].filter((id) => !hidden(id)), kept: ['open-file', 'hold', 'demo'].filter((id) => hidden(id)), lede: seen('.lede'), hints: seen('.hint'), cls: document.documentElement.className }
+    return { hid: ['txid', 'look', 'summon', 'mode-switch', 'ask', 'ask-anyway', 'ask-file', 'check-conn'].filter((id) => !hidden(id)), link: [...document.querySelectorAll('a[href$="seance-offline.html"]')].map((a) => a.offsetParent !== null), kept: ['open-file', 'hold', 'demo'].filter((id) => hidden(id)), lede: seen('.lede'), hints: seen('.hint'), cls: document.documentElement.className }
   })
-  check(shown.cls === 'offline' && shown.hid.length === 0 && shown.kept.length === 0 && !/summon|paste any id/i.test(shown.lede) && !/indexer/i.test(shown.hints), `${tag}: the lookup, "Summon", the mode switch and "Ask for it anyway" are hidden; the file button and the prepared demos stay; no visible line mentions the indexer`, `shown anyway: ${shown.hid.join(',')}; missing: ${shown.kept.join(',')}`)
+  check(shown.cls === 'offline' && shown.hid.length === 0 && shown.link.length === 1 && !shown.link[0] && shown.kept.length === 0 && !/summon|paste any id/i.test(shown.lede) && !/indexer/i.test(shown.hints), `${tag}: the lookup, "Summon", the mode switch, "Ask for it anyway", the connection check and the link to the offline copy are hidden; the file button and the prepared demos stay; no visible line mentions the indexer`, `shown anyway: ${shown.hid.join(',')}${shown.link.length === 1 && !shown.link[0] ? '' : ' (offline-copy link)'}; missing: ${shown.kept.join(',')}`)
   check(s.badge === 'Offline' && s.modeText === OFFLINE_LINE && s.shownId === hero(1).id && /^A saved example is on the table/.test(s.status) && /Open a saved transaction file to read your own\.$/.test(s.status), `${tag}: the first screen is demo 1 from the recording, marked "Offline", with the line "${OFFLINE_LINE}"`, `${s.badge} | ${s.modeText} | ${s.status.slice(0, 60)}`)
   expectHeard(s, hero(1), 'bob', `${tag}: the Medium, with Bob's key (already in hand), reads demo 1`)
   auditReads(s, hero(1), `${tag}: the Auditor, with the audit key, counts demo 1`)
@@ -1270,7 +1273,7 @@ async function offlineCopyRun(browser, w) {
   auditReads(s, t, `${tag}: the audit key counts the file's transaction`)
   leaksChecks(s, t, `${tag}: the leaks panel`)
   checkLinks(s, t.id, tag)
-  check(s.netHead === 'This page sent 0 requests to 0 hosts; your keys were in none of them.' && !s.netLeak && s.netFile === 'Since you opened your file: 0 requests.' && s.netRows.length === 0, `${tag}: the ghost log says 0 requests, 0 hosts, no key in any request`, `${s.netHead} | ${s.netFile}`)
+  check(s.netHead === 'This page sent 0 requests to 0 hosts; 0 named a transaction id; your keys were in none of them.' && !s.netLeak && s.netFile === 'Since you opened your file: 0 requests.' && s.netRows.length === 0, `${tag}: the ghost log says 0 requests, 0 hosts, no key in any request`, `${s.netHead} | ${s.netFile}`)
   await seeLenses(page)
   await layout(page, tag, { wide })
   await axe(page, tag)
@@ -1333,7 +1336,7 @@ async function offlineServedRun(browser) {
   const { page, log } = await open(browser, { w: 1280, url, intercept: (r) => void (r.url() === url ? r.continue() : r.abort()) })
   const s = await snap(page)
   check(s.badge === 'Offline' && s.modeText === OFFLINE_LINE && s.shownId === hero(1).id, `${tag}: it starts the same way`, `${s.badge} | ${s.modeText}`)
-  check(s.netHead === 'This page sent 1 request to 1 host; your keys were in none of them.' && s.netRows.length === 1 && s.netRows[0].cells[2] === OWN && s.netRows[0].cells[3] === '/seance-v2/seance-offline.html', `${tag}: the ghost log lists one request: the page itself`, `${s.netHead} | ${s.netRows.map((x) => x.cells.join(' ')).join(' ; ').slice(0, 120)}`)
+  check(s.netHead === 'This page sent 1 request to 1 host; 0 named a transaction id; your keys were in none of them.' && s.netRows.length === 1 && s.netRows[0].cells[2] === OWN && s.netRows[0].cells[3] === '/seance-v2/seance-offline.html', `${tag}: the ghost log lists one request: the page itself`, `${s.netHead} | ${s.netRows.map((x) => x.cells.join(' ')).join(' ; ').slice(0, 120)}`)
   const asked = log.requests.map((r) => r.url)
   check(asked.length === 1 && asked[0] === url && log.failed.length === 0, `${tag}: the debugging protocol saw that one request and no other`, `${asked.length} seen`)
   const csp = await cspSeen(page, log)
@@ -1595,13 +1598,154 @@ async function previewRun(browser) {
   check(png.length <= 300 * 1024, 'preview: og.png is at most 300 KB', `${png.length} bytes`)
 }
 
+// ---------- the connection check (README "Check my connection"), and what a lookup of a listed id sends ----------
+// The indexer and Cloudflare's trace answer are both mocked here. The answer is a fixture with a documentation IP address and an invented place name, so that the run can look for
+// both on the page and in the browser; no real answer is fetched by this file, and no check below prints a fixture value.
+const FIX = { ip: '203.0.113.77', loc: 'Zzyzx-Test-Province-Of-Nowhere', uag: 'Fixture/1.0', ts: '1700000000.123' }
+const fixtureTrace = (kex) => ['fl=00f000', 'h=esme-indexer-a.ootle.tari.com', `ip=${FIX.ip}`, `ts=${FIX.ts}`, 'visit_scheme=https', `uag=${FIX.uag}`, 'colo=XXX', 'http=http/2', `loc=${FIX.loc}`, 'tls=TLSv1.3', 'sni=plaintext', ...(kex === null ? [] : [`kex=${kex}`])].join('\n') + '\n'
+const KEX_HYBRID_START = "Your browser's connection to the indexer's front door (Cloudflare) used X25519MLKEM768: X25519 combined with ML-KEM-768."
+const KEX_HYBRID_END = 'This covers only that connection. It does not change what the chain makes public, and it does not cover the link from Cloudflare to the indexer.'
+const KEX_CLASSICAL = (group) => `Your browser used a classical key exchange (${group}) for this connection.`
+const KEX_UNKNOWN = 'Cloudflare did not say which key exchange this connection used.'
+const KEX_OTHER = 'Cloudflare named a key exchange this page does not know, so it cannot say whether it is post-quantum.'
+
+// The indexer as the lookups see it: the two listed transactions, a 404 for any id, and Cloudflare's trace (`state.gate`, when set, holds the answer back).
+function mockIndexer() {
+  const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' }
+  const state = { kex: 'X25519MLKEM768', gate: null, asked: [], lists: 0, traces: 0 }
+  const intercept = (r) => {
+    const u = new URL(r.url())
+    if (u.host !== INDEXER_HOST) return void (u.host === OWN ? r.continue() : r.abort())
+    if (r.method() === 'OPTIONS') return void r.respond({ status: 204, headers: cors })
+    if (u.pathname === TRACE_PATH) {
+      state.traces++
+      const answer = () => r.respond({ status: 200, headers: cors, contentType: 'text/plain', body: fixtureTrace(state.kex) })
+      return void (state.gate ? state.gate.then(answer) : answer())
+    }
+    if (u.pathname === '/transactions/recent') {
+      state.lists++
+      return void r.respond({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ transactions: ledger.recent.transactions }) })
+    }
+    const id = u.pathname.split('/').pop()
+    state.asked.push(id)
+    return void r.respond({ status: 404, headers: cors, contentType: 'application/json', body: JSON.stringify({ error: `Transaction ${id} is not known to this indexer` }) })
+  }
+  return { state, intercept }
+}
+const lookUp = async (page, id) => {
+  await page.$eval('#txid', (el) => el.select())
+  await page.keyboard.sendCharacter(id)
+  await page.click('#look')
+  await settled(page)
+  return snap(page)
+}
+const namedInHead = (head) => /; (\d+) named a transaction id; your keys were in none of them\.$/.exec(head)?.[1] ?? null
+
+// research/79 S3: two different ids that are both in the list the page downloads cause the very same requests, so the indexer cannot tell which of the listed ones was read;
+// K is 0 until "Ask for it anyway" is pressed, and 1 after. The browser's own requests are left out of both lists (the background refresh of its saved list, see refresh above, and the icon): they are not the page's and come in one run and not the other.
+async function lookupPatternRun(browser) {
+  const tag = 'looking up a listed id'
+  const ids = ledger.recent.transactions.slice(0, 2).map((t) => t.transaction_id)
+  const runs = []
+  const icon = /\/favicon\.svg$/ // the browser fetches the page's icon on its own and keeps it for the next page it opens, so it is listed in one run only
+  for (const id of ids) {
+    const m = mockIndexer()
+    const { page, log } = await open(browser, { w: 1280, intercept: m.intercept })
+    const s = await lookUp(page, id)
+    runs.push({ id, s, asked: m.state.asked.length, lists: m.state.lists, requests: made(log).filter((r) => !icon.test(r.url)).map((r) => `${r.method} ${r.url}`), rows: s.netRows.filter((r) => !(r.cells[2] === INDEXER_HOST && r.cells[4] === 'unknown') && !icon.test(r.cells[3])).map((r) => r.cells.slice(2).join(' | ')), named: named(log) })
+    await page.close()
+  }
+  const [a, b] = runs
+  check(ids.length === 2 && ids[0] !== ids[1] && runs.every((r) => r.s.shownId === r.id && LISTED.test(r.s.source ?? '') && r.asked === 0 && r.lists === 1), `${tag}: two different ids from the list are each read from it: one request for the list, none by id`, runs.map((r) => `${r.lists} list, ${r.asked} by id, ${r.s.source}`).join(' | '))
+  check(a.requests.length > 1 && JSON.stringify(a.requests) === JSON.stringify(b.requests) && !a.requests.concat(b.requests).some((u) => ids.some((id) => u.includes(id))), `${tag}: the two lookups cause identical request lists (${a.requests.length} requests, same methods and addresses), and no request names either id`, `${a.requests.length} and ${b.requests.length} requests; in one run only: ${[...a.requests.filter((u) => !b.requests.includes(u)), ...b.requests.filter((u) => !a.requests.includes(u))].map((u) => u.replace(/[0-9a-f]{64}/g, '<64 hex>')).join(' ; ')}`)
+  check(a.rows.length > 0 && JSON.stringify(a.rows) === JSON.stringify(b.rows), `${tag}: the ghost log lists the same rows for both (${a.rows.length} rows, compared without the row number and the time)`, `${a.rows.length} and ${b.rows.length} rows; in one run only: ${[...a.rows.filter((x) => !b.rows.includes(x)), ...b.rows.filter((x) => !a.rows.includes(x))].join(' ;; ')}`)
+  check(runs.every((r) => namedInHead(r.s.netHead) === '0' && r.named === 0), `${tag}: K is 0 in the headline for both`, runs.map((r) => r.s.netHead).join(' | '))
+
+  const m = mockIndexer()
+  const { page, log } = await open(browser, { w: 1280, intercept: m.intercept })
+  let s = await lookUp(page, UNKNOWN)
+  check(s.ask && NOT_LISTED.test(s.status) && m.state.asked.length === 0 && namedInHead(s.netHead) === '0' && named(log) === 0, `${tag}: an id the list does not hold, before "Ask for it anyway": nothing asked by id, K is 0`, `${m.state.asked.length} by id | ${s.netHead}`)
+  await page.click('#ask-anyway')
+  await settled(page)
+  s = await snap(page)
+  check(m.state.asked.length === 1 && m.state.asked[0] === UNKNOWN && namedInHead(s.netHead) === '1' && named(log) === 1, `${tag}: after "Ask for it anyway", the id is asked once, and K is 1`, `${m.state.asked.length} by id | ${s.netHead}`)
+  await netlogChecks(page, log, `${tag}, after the id was asked`)
+  await page.close()
+}
+
+async function connectionRun(browser, w) {
+  const tag = `the connection check (${w}px)`
+  const wide = w >= 960
+  const m = mockIndexer()
+  let release
+  m.state.gate = new Promise((ok) => (release = ok)) // the first answer is held back until the button has been pressed twice
+  const { page, log } = await open(browser, { w, intercept: m.intercept })
+  const out = () => page.evaluate(() => document.getElementById('check-out').textContent)
+  const idle = () => until(page, () => !document.getElementById('check-conn').hasAttribute('aria-disabled') && !/^Sending/.test(document.getElementById('check-out').textContent), undefined, 10000)
+  const traces = () => log.requests.filter((r) => new URL(r.url).pathname === TRACE_PATH)
+  let s = await snap(page)
+  const rows0 = s.netRows.length
+  const k0 = namedInHead(s.netHead)
+  const button = await page.evaluate(() => {
+    const b = document.getElementById('check-conn')
+    return { text: b.textContent, shipped: b.hasAttribute('aria-disabled'), hint: b.parentElement.querySelector('.hint')?.textContent ?? '', live: document.getElementById('check-out').getAttribute('role') }
+  })
+  check(button.text === 'Check my connection' && !button.shipped && /sends one request/.test(button.hint) && button.live === 'status' && (await out()) === '' && traces().length === 0 && m.state.traces === 0, `${tag}: the button says it sends one request, and nothing is sent or shown until it is pressed`, `${button.text} | ${traces().length} trace requests`)
+
+  // pressed twice while the first answer is awaited: one request
+  await page.click('#check-conn')
+  await page.click('#check-conn')
+  await sleep(300)
+  const waiting = await page.evaluate(() => ({ busy: document.getElementById('check-conn').getAttribute('aria-disabled'), text: document.getElementById('check-out').textContent }))
+  check(m.state.traces === 1 && waiting.busy === 'true' && waiting.text === 'Sending one request…', `${tag}: pressed twice while the answer is awaited, it sends one request and says so`, `${m.state.traces} requests | ${waiting.text}`)
+  release()
+  await idle()
+  const first = await out()
+  check(first.startsWith(KEX_HYBRID_START) && first.endsWith(KEX_HYBRID_END) && first.includes("NIST's quantum-resistant key-establishment standard") && !/classical/i.test(first), `${tag}: kex=X25519MLKEM768 shows the post-quantum sentence with the limit on what it covers`, first.slice(0, 60))
+  await layout(page, `${tag}, the answer showing`, { wide })
+  await axe(page, `${tag}, the answer showing`)
+
+  // the other answers Cloudflare can give, one press each
+  const bad = []
+  let n = 1
+  for (const [kex, want] of [['X25519', KEX_CLASSICAL('X25519')], ['P-256', KEX_CLASSICAL('P-256')], [null, KEX_UNKNOWN], ['junk;value<>', KEX_OTHER], ['X25519Kyber768Draft00', KEX_OTHER]]) {
+    m.state.kex = kex
+    await page.click('#check-conn')
+    await idle()
+    n++
+    s = await snap(page)
+    for (let i = 0; i < 40 && s.netRows.some((r) => r.cells[6] === 'waiting'); i++) {
+      await sleep(100)
+      s = await snap(page)
+    }
+    const shown = await out()
+    if (shown !== want) bad.push(`kex ${kex === null ? 'missing' : kex.slice(0, 12)}: ${shown.slice(0, 50)}`)
+    if (m.state.traces !== n || s.netRows.length !== rows0 + n || namedInHead(s.netHead) !== k0) bad.push(`after press ${n}: ${m.state.traces} requests, ${s.netRows.length - rows0} new rows, K ${namedInHead(s.netHead)}`)
+  }
+  check(bad.length === 0, `${tag}: X25519 and P-256 are called classical with their name; a missing line is "did not say"; a junk value and another hybrid's name are "does not know" (never "classical", never copied); each press adds one request and one row, and K stays ${k0}`, bad.join(' | '))
+  check(traces().length === n && traces().every((r) => r.method === 'GET' && r.type === 'fetch') && !traces().some((r) => 'cookie' in JSON.parse(r.headers)), `${tag}: ${n} presses made ${n} requests, each a plain GET (no preflight, no cookie)`, traces().map((r) => `${r.method} ${r.type}`).join(', '))
+
+  // the fixture's IP address and place are in none of the places a page could keep them
+  const secrets = Object.values(FIX)
+  const kept = await page.evaluate((secrets) => {
+    const where = { page: document.documentElement.outerHTML + document.body.innerText, storage: JSON.stringify(localStorage) + JSON.stringify(sessionStorage), cookie: document.cookie, title: document.title, address: location.href, history: JSON.stringify(history.state), timing: JSON.stringify(performance.getEntriesByType('resource').map((e) => e.name)) }
+    return Object.entries(where).filter(([, v]) => secrets.some((x) => v.includes(x))).map(([k]) => k)
+  }, secrets)
+  const logged = log.console.some((c) => secrets.some((x) => c.text.includes(x))) || log.pageErrors.some((e) => secrets.some((x) => e.includes(x))) || log.requests.some((r) => secrets.some((x) => r.url.includes(x) || r.headers.includes(x)))
+  check(kept.length === 0 && !logged, `${tag}: the answer's IP address, place, browser name and time are not in the page, storage, cookies, title, address, history, the console or any request (${secrets.length} values searched)`, kept.length || logged ? `found in: ${kept.join(', ')}${logged ? ' console/requests' : ''}` : '')
+  const csp = await cspSeen(page, log)
+  check(csp.length === 0 && log.pageErrors.length === 0 && consoleBad(log).length === 0, `${tag}: 0 Content Security Policy violations, no page error, no console error`, csp.concat(log.pageErrors, consoleBad(log).map((c) => c.text)).slice(0, 2).join(' | '))
+  await netlogChecks(page, log, tag)
+  await page.close()
+}
+
 // ---------- the built files ----------
 function staticChecks() {
   const html = readFileSync(join(DIST, 'index.html'), 'utf8')
   const refs = [...html.matchAll(/\b(?:src|href)="([^"]+)"/g)].map((m) => m[1])
   const local = refs.filter((u) => !/^(?:[a-z]+:)?\/\//i.test(u) && !u.startsWith('data:') && !u.startsWith('#'))
-  const outside = local.filter((u) => !u.startsWith('/seance-v2/assets/') && u !== './favicon.svg')
-  check(outside.length === 0 && local.filter((u) => u.startsWith('/seance-v2/assets/')).length >= 2, 'build: every asset path starts with /seance-v2/assets/ (the script and the style sheet), and the icon is the relative ./favicon.svg', outside.join(', ') || local.join(' '))
+  const outside = local.filter((u) => !u.startsWith('/seance-v2/assets/') && u !== './favicon.svg' && u !== './seance-offline.html')
+  check(outside.length === 0 && local.filter((u) => u.startsWith('/seance-v2/assets/')).length >= 2, 'build: every asset path starts with /seance-v2/assets/ (the script and the style sheet), the icon is the relative ./favicon.svg, and the link to the offline copy is the relative ./seance-offline.html', outside.join(', ') || local.join(' '))
   check(!/<script(?![^>]*\bsrc=)/i.test(html) && !/\sstyle=/i.test(html), 'build: no inline script or style in index.html')
   check(!existsSync(join(DIST, 'gate.html')) && existsSync(join(DIST, 'THIRD-PARTY-LICENSES.md')) && existsSync(join(DIST, 'favicon.svg')), 'build: no gate page shipped; third-party licence notices and favicon are')
   // Hosts the page may name: the indexer (the only one it contacts: the CSP allows nothing else), and links a visitor can click: the explorer, ootle.tari.com, the second
@@ -1670,6 +1814,9 @@ try {
   for (const w of [1280, 375]) await scenario(`forgotten ${w}`, () => forgottenRun(online, w))
   section('a quiet chain (mocked: the list holds no private transfer, so Summon falls back to the recorded sample)')
   await scenario('quiet chain', () => quietRun(online))
+  section('the connection check and what a lookup of a listed id sends (mocked indexer and a fixture answer for Cloudflare; no real request)')
+  await scenario('lookup pattern', () => lookupPatternRun(offline))
+  for (const w of [1280, 375]) await scenario(`connection check ${w}`, () => connectionRun(offline, w))
   section('a transaction opened from a saved file (no network at all from the moment the file is chosen)')
   for (const w of [1280, 375]) await scenario(`file ${w}`, () => fileRun(offline, w))
   await scenario('uppercase link', () => hashRun(offline))

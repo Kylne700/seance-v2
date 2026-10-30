@@ -2,9 +2,10 @@
 // Two sources. A wrapper around `fetch` sees everything this page's own code asks for, with sizes. The browser's Resource Timing lists every file
 // loaded for the page, and would also show a request that skipped the wrapper. A tripwire watches for keys: if a key this page was given turns up
 // in a request, the log says so. No DOM in here, so it is tested on its own; main.ts connects it to `fetch` and to PerformanceObserver.
+import { TRACE_PATH } from './conncheck.ts'
 import { plural, short } from './format.ts'
 
-export type Kind = 'page' | 'list' | 'transaction' | 'other'
+export type Kind = 'page' | 'list' | 'transaction' | 'check' | 'other'
 
 export interface Entry {
   n: number
@@ -58,6 +59,8 @@ interface Row extends Entry {
 export interface Summary {
   requests: number
   hosts: number
+  /** Requests whose address names a transaction id (see namesId), counted from the address, not from the kind of request. */
+  named: number
   /** A key this page was given appears in at least one request. */
   leaked: boolean
   /** Requests that went around the wrapper: only their addresses could be checked for keys. */
@@ -69,9 +72,21 @@ const REVEALS: Record<Kind, string> = {
   page: 'Your IP address, the time and which file you asked for.',
   list: 'Your IP address, the time and the headers your browser adds. No transaction id.',
   transaction: 'Your IP address, the time and this id.',
+  check: 'Your IP address, the time and the headers your browser adds. No transaction id. This is the connection check you pressed.',
   other: 'Your IP address, the time and what you asked for.',
 }
 const TX = /^\/transactions\/([0-9a-f]{64})$/
+const HEX64 = /[0-9a-f]{64}/i
+
+/** Does this address name a transaction id: 64 hex digits in its path or in a `last_id` value? Read from the address itself, whatever the request is for. */
+export function namesId(address: string): boolean {
+  try {
+    const u = new URL(address, typeof location === 'undefined' ? undefined : location.href) // a relative address is the page's own
+    return HEX64.test(decodeURIComponent(u.pathname)) || u.searchParams.getAll('last_id').some((v) => HEX64.test(v))
+  } catch {
+    return HEX64.test(address) // an address the parser refuses (or a relative one with no page to resolve it against): look at the raw text, so a doubtful one is counted rather than missed
+  }
+}
 /** A key shorter than this is not searched for: it would match by accident. A view key is 64 characters. */
 const MIN_SECRET = 16
 
@@ -138,6 +153,7 @@ export function createNetlog(o: Options) {
   function describe(url: URL): { kind: Kind; path: string } {
     const indexer = url.host === o.indexerHost
     if (indexer && url.pathname === '/transactions/recent') return { kind: 'list', path: url.pathname + url.search }
+    if (indexer && url.pathname === TRACE_PATH) return { kind: 'check', path: url.pathname + url.search }
     const tx = indexer ? TX.exec(url.pathname) : null
     if (tx) return { kind: 'transaction', path: `/transactions/${short(tx[1], 6)}` }
     return { kind: url.host === o.siteHost ? 'page' : 'other', path: url.pathname + url.search } // the #fragment never leaves the browser, so it is not shown
@@ -155,6 +171,7 @@ export function createNetlog(o: Options) {
     return {
       requests: rows.length,
       hosts: new Set(rows.map((r) => r.host)).size,
+      named: rows.filter((r) => namesId(r.url)).length,
       leaked: rows.some((r) => r.leaked),
       strays: rows.filter((r) => !r.viaWrapper && r.warn !== null).length,
     }
@@ -164,7 +181,7 @@ export function createNetlog(o: Options) {
   function headline(): string {
     const s = summary()
     if (s.leaked) return 'Warning: a key this page was given appears in a request it sent. Do not use that key again. The rows marked below show which request.'
-    const base = `This page sent ${plural(s.requests, 'request')} to ${plural(s.hosts, 'host')}; your keys were in none of them.`
+    const base = `This page sent ${plural(s.requests, 'request')} to ${plural(s.hosts, 'host')}; ${s.named} named a transaction id; your keys were in none of them.`
     return s.strays ? `${base} (${plural(s.strays, 'request')} went around the page's own request code, so only ${s.strays === 1 ? 'its' : 'their'} address could be checked.)` : base
   }
 
