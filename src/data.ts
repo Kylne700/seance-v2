@@ -240,6 +240,9 @@ export function createData(opts: { timeoutMs?: number; pick?: (n: number) => num
     return answer(sample(), { mode, fellBack })
   }
 
+  /** The list this page downloaded last, if it has, read the same way as Summon reads it. Asks nobody: with no list yet the answer is empty. */
+  const latest = async (): Promise<TxView[]> => (held ? withNotes(await held.items.catch((): unknown[] => [])) : [])
+
   return {
     get mode(): Mode {
       return mode
@@ -251,5 +254,6 @@ export function createData(opts: { timeoutMs?: number; pick?: (n: number) => num
     recent,
     example,
     fromFile,
+    latest,
   }
 }
