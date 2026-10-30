@@ -62,3 +62,24 @@ Hosts named in the built files: the two indexers' names, `explorer.tari.mw`, `oo
 | Nobody | your view key and the audit key: they are used only inside the page (wasm) and are in no request. The `connect-src` of the page's CSP lists only the indexer |
 
 The weak point v2 addresses: the by-id request names the one transaction you care about.
+
+## 6. Send the Seance a secret (v2, with a wallet extension)
+
+Added on 2026-10-30. Sections 1 to 5 are the v1 page and are unchanged. This section is what v2's "Send the Seance a secret" adds when a visitor with the Sapient wallet extension sends a private payment of 0.031415 tTARI (testnet TARI) to Bob, the demo recipient.
+
+Sources. The wallet's requests are from the Chromium net log of a real send with Sapient 0.6.14 on Esmeralda on 2026-10-30 (about an hour of wallet use), made from a test page with this page's policy. The page's requests are read from its code and from the smoke test with a stand-in wallet. A send through this page with a real wallet: NOT VERIFIED.
+
+| Who | Request | Host learns |
+|---|---|---|
+| The page | its files, as in section 1 | the site host (GitHub Pages): IP, time |
+| The page | `GET /transactions/recent?limit=40`, the list Summon reads, after a send: up to 9 times, starting 20 s after the send, each next one 20 s after the one before has ended, without the page's kept copy. "Look again" makes one more | `esme-indexer-a.ootle.tari.com` (Cloudflare in front): IP and time of each; no id |
+| The page, to the wallet | `window.tari` calls: messages between the page and the extension in the browser | nothing leaves the browser for these |
+| The wallet extension (its background worker) | all to `https://ootle-indexer-a.tari.com`: `GET /identity`; `GET /substates/...` for its own account; `GET /transactions/recent?limit=50` with `last_id` pages (its scan for payments to you); `GET /epoch-manager/stats`; `POST /substates/fetch`; `POST /transactions/dry-run`; `POST /transactions` (the send); **`GET /transactions/<id>/result?include_proof`, a lookup of its own send by id** | that host: your IP, your account id, and the id and time of the payment you sent |
+| The browser itself | network error reports to `a.nel.cloudflare.com` for the indexer's origin, and its own update and autofill checks | not part of this feature |
+
+- No new host for the page, no change to the page's policy, and no `*.tari.mw` host on this path in that run.
+- The lookup by id is the wallet's. The page never calls the wallet method for it (`tari_getTransactionResult`), nor the one that asks for a view key (`tari_requestViewAccess`). It finds the payment in the list by the commitment of the note the wallet returns.
+- What sections 1 to 5 say about the page (it contacts the indexer, and asks by id for a demo or after "Ask for it anyway") holds for the page. It does not cover the visitor's wallet, which talks to its own host and looks up its own payment there by id. On 2026-10-29 the two host names answered with the same newest transaction (see the host line at the top); whether one operator runs both, and what it keeps: NOT VERIFIED.
+- The links beside an answer carry the transaction id once the payment is found. The page does not call them, and a click on one sends the id to that site (section 3).
+
+Who sees what, with a wallet send: the page's indexer host sees your IP address and the time of each list request, and no id. The wallet's host sees the wallet's requests above, including the id of your payment. Anyone can read the payment's amount and memo with Bob's published view key: that is the point of the section, and the warning beside its field.

@@ -104,6 +104,16 @@ input[type='text']:focus-visible, select:focus-visible { border-color: var(--foc
 .status.warn { color: var(--amber); }
 .status.error { color: var(--rose); }
 
+/* Send the Seance a secret (src/walletui.ts) */
+.wallet { margin-top: 8px; padding-top: 16px; border-top: 1px dashed var(--line); }
+.wallet h3 { font-size: 1.125rem; margin-bottom: 6px; }
+.wallet .hint { max-width: 46rem; }
+.wallet-review { max-width: 46rem; margin: 0 0 12px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--well); }
+.wallet-review > p { margin: 0 0 8px; }
+.wallet-lead { color: var(--muted); }
+.wallet-echo { font: 600 1.125rem/1.4 var(--serif); overflow-wrap: anywhere; }
+.wallet .status { max-width: 46rem; margin-top: 4px; }
+
 /* Lenses */
 .lensed { margin-bottom: 48px; }
 .lenses { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }

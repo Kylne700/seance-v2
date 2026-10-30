@@ -58,6 +58,32 @@
           </div>
         </div>
 
+        <section class="wallet online" id="wallet" aria-labelledby="wallet-h">
+          <h3 id="wallet-h">Send the Seance a secret</h3>
+          <p class="hint" id="wallet-lede">Another way to call up a transaction: pay Bob, the demo recipient, 0.031415 tTARI (testnet TARI) from your own wallet, with a few words attached. The page then finds your payment in the list of latest transactions, and the three ghosts read it. The fee is extra, and is paid privately too.</p>
+          <p class="hint warn-text" id="wallet-warn">Bob's view key is published on this page, so anyone can read what you send, now and later: send a ghost story, not a password.</p>
+          <label for="wallet-memo">Your words (up to 40 characters)</label>
+          <div class="row">
+            <!-- shortcut: 40 chars proven on Sapient 0.6.14, longer not tested -->
+            <input id="wallet-memo" type="text" maxlength="40" spellcheck="false" autocomplete="off" placeholder="A ghost story" aria-describedby="wallet-lede wallet-warn" />
+            <button class="btn primary" type="button" id="wallet-send" aria-disabled="true">Review my words</button>
+          </div>
+          <div class="wallet-review" id="wallet-review" hidden>
+            <p class="wallet-lead">You are about to send these words:</p>
+            <p class="wallet-echo" id="wallet-echo"></p>
+            <p class="hint" id="wallet-to"></p>
+            <p class="hint">Your wallet's approval screen shows the amount and the recipient, not your words, so read them here.</p>
+            <div class="row">
+              <button class="btn primary" type="button" id="wallet-confirm">Send with my wallet</button>
+              <button class="btn ghost" type="button" id="wallet-change">Change my words</button>
+            </div>
+          </div>
+          <p class="status info" id="wallet-status" role="status" aria-live="polite"></p>
+          <div class="row" id="wallet-more" hidden>
+            <button class="btn ghost small" type="button" id="wallet-again">Look again</button>
+          </div>
+        </section>
+
         <div class="modebar">
           <span class="badge live" id="mode-badge">Live</span>
           <span id="mode-text" class="mode-text"></span>
@@ -74,6 +100,7 @@
         <h2 id="netlog-h">What this page asked of the network</h2>
         <p class="net-head" id="net-head">The list appears when the page's code has loaded.</p>
         <p class="net-file" id="net-file" hidden></p>
+        <p class="hint online" id="wallet-net">If you use "Send the Seance a secret", this page asks the wallet extension in your browser to make the payment. The wallet talks to its own host, ootle-indexer-a.tari.com, and looks up its own payment there by id. Those are the wallet's requests, not this page's, so they are not in the list below. This page downloads the same list of latest transactions as Summon, up to 9 times, 20 s apart, and every download is a row below. It finds your payment in that list by its commitment, and asks no indexer for it by id.</p>
         <div class="conn-check online">
           <button class="btn ghost small" type="button" id="check-conn" aria-disabled="true">Check my connection</button>
           <p class="hint">Pressing this sends one request; nothing is sent before. Cloudflare, which fronts the indexer, answers with a short text about your connection (your IP address is in it). This page reads one line of that text, the key exchange, and drops the rest. The request shows in the list below.</p>

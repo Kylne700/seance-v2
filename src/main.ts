@@ -10,6 +10,7 @@ import { createLater } from './later.ts'
 import { createNetlog } from './netlog.ts'
 import { poltergeist } from './poltergeist.ts'
 import templateSource from '../template/src/lib.rs?raw'
+import { mountWallet } from './walletui.ts'
 import { proofLinks, renderAudit, renderLeaks, renderNetRows, renderPoltergeist, renderReading, renderStranger, renderStrangerEmpty, showTally, type Hearing } from './render.ts'
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T => {
@@ -183,9 +184,9 @@ const cardsFar = (): boolean => {
   return oneColumn.matches || top < 0 || top > window.innerHeight / 2
 }
 
-/** `asked`: the id being looked up, so that a miss can offer to ask for it by id. `saying`: the status line while the work is under way. */
-async function load(job: () => Promise<Shown>, opts: { key?: string; auditKey?: string; fromUser?: boolean; asked?: string; saying?: string } = {}): Promise<void> {
-  if (busy) return
+/** `asked`: the id being looked up, so that a miss can offer to ask for it by id. `saying`: the status line while the work is under way. `wallet`: the visitor's own payment, found by its commitment: it is shown even if another call is under way (that one drops its answer), and its id goes neither into the id box nor into the address bar. */
+async function load(job: () => Promise<Shown>, opts: { key?: string; auditKey?: string; fromUser?: boolean; asked?: string; saying?: string; wallet?: boolean } = {}): Promise<void> {
+  if (busy && !opts.wallet) return
   const mine = ++loadSeq
   setBusy(true)
   ask.hidden = true
@@ -197,7 +198,7 @@ async function load(job: () => Promise<Shown>, opts: { key?: string; auditKey?: 
     renderStranger(strangerBody, shown)
     renderLeaks(leaksBody, shown.view)
     mediumActions.replaceChildren(proofLinks(shown)[0]) // the Medium card has its own link to the same transaction
-    if (shown.mode === 'file') history.replaceState(null, '', location.pathname + location.search) // the address bar must not keep pointing at another transaction
+    if (shown.mode === 'file' || opts.wallet) history.replaceState(null, '', location.pathname + location.search) // the address bar must not keep pointing at another transaction
     else if (!shown.preview) {
       txid.value = shown.view.id
       history.replaceState(null, '', `#tx=${shown.view.id}`)
@@ -309,6 +310,9 @@ checkBtn.addEventListener('click', async () => {
   checkBtn.removeAttribute('aria-disabled')
 })
 checkBtn.removeAttribute('aria-disabled') // shipped as not ready, like the other buttons
+
+// "Send the Seance a secret" needs the network and a wallet extension, so the offline copy does not wire it (its section is hidden there).
+if (!offline) mountWallet({ $, data, show: (shown) => void load(async () => shown, { key: 'bob', fromUser: true, wallet: true }) })
 
 // Ready. index.html ships a loading line and buttons marked not ready; clear both here, before the address is read (it may start a load).
 // "Look at it" also ships `disabled`: a click or Enter on a submit button before this point makes the browser cancel the page's pending code (the form is blocked by the CSP, the load is not resumed).

@@ -56,6 +56,8 @@ export const demoKeys: Record<string, DemoKey> = {
   ...(ledger.keys as Record<string, DemoKey>),
   auditor: { label: "The auditor (holds the demo token's audit key)", viewSecret: ledger.auditor.secret },
 }
+/** Bob's address: where the page's "Send the Seance a secret" payment goes. His view key is one of demoKeys. */
+export const bobAddress: string = ledger.keys.bob.address
 // The prepared transactions: the ones paid in the demo token, which has an audit key (all three ghosts have something to read), then the TARI demos.
 const heroes = ledger.hero as { id: string; to: string }[]
 const tariDemos = ledger.txs as { id: string; to: string; kind: string }[]
@@ -133,8 +135,9 @@ export function createData(opts: { timeoutMs?: number; pick?: (n: number) => num
   // The list of latest transactions: one request that is the same for every visitor and every lookup, so it says nothing about which id is wanted.
   // Summon picks from it and a lookup looks in it first. One copy is kept for a minute so the two share a request; a failed request is not kept.
   let held: { at: number; items: Promise<unknown[]> } | null = null
-  const listing = (): Promise<unknown[]> => {
-    if (held && now() - held.at < LIST_KEPT_MS) return held.items
+  // `fresh`: the request is made again, whatever is kept. The payment watch (findNote) uses it, so that a kept copy (up to 60 s old) cannot hide a new payment.
+  const listing = (fresh = false): Promise<unknown[]> => {
+    if (!fresh && held && now() - held.at < LIST_KEPT_MS) return held.items
     const items = within(client.listRecentTransactions({ limit: RECENT_LIMIT, last_id: null, source: null })).then((l) => {
       if (!Array.isArray(l.transactions)) throw new Error('the indexer gave no list of transactions') // an answer that is no list counts as no answer, as it always did for Summon
       return l.transactions as unknown[]
@@ -240,6 +243,26 @@ export function createData(opts: { timeoutMs?: number; pick?: (n: number) => num
     return answer(sample(), { mode, fellBack })
   }
 
+  /**
+   * The visitor's own payment, found in the list by the commitment of its note. No transaction id is asked of any indexer, here or anywhere: the list is the same
+   * request Summon makes. Null when the payment is not in the list (yet). It does not switch the page to recorded data when the list cannot be had: that is for the caller to say.
+   */
+  async function findNote(commitment: string, o: { fresh?: boolean } = {}): Promise<Shown | null> {
+    if (mode !== 'live') throw new LookupError('not-recorded', 'This page is showing recorded data and does not ask the indexer. Press the button again to go back to live data.')
+    const want = commitment.toLowerCase()
+    const items = await listing(o.fresh)
+    for (const item of items) {
+      let view: TxView
+      try {
+        view = parseTransaction(item)
+      } catch {
+        continue // an entry this page cannot read cannot be the payment it is looking for
+      }
+      if (view.outputs.some((out) => out.commitment === want)) return answer(view, { list: { size: items.length, found: true } })
+    }
+    return null
+  }
+
   /** The list this page downloaded last, if it has, read the same way as Summon reads it. Asks nobody: with no list yet the answer is empty. */
   const latest = async (): Promise<TxView[]> => (held ? withNotes(await held.items.catch((): unknown[] => [])) : [])
 
@@ -254,6 +277,7 @@ export function createData(opts: { timeoutMs?: number; pick?: (n: number) => num
     recent,
     example,
     fromFile,
+    findNote,
     latest,
   }
 }

@@ -1,0 +1,130 @@
+{
+ "transaction_id": "438449c523fbe05fe5ab56b16c41678c6fdee116a79cf37d5b8221f7b9cdad7c",
+ "transaction": {
+  "V1": {
+   "body": {
+    "transaction": {
+     "network": 38,
+     "fee_instructions": [
+      {
+       "StealthTransfer": {
+        "resource_address_ref": {
+         "Address": "resource_0101010101010101010101010101010101010101010101010101010101010101"
+        },
+        "statement": {
+         "inputs_statement": {
+          "inputs": [
+           {
+            "commitment": "926d3629b1ab85ba31059de86ba4059dc5bd315328f80f72cffa79863cf16845",
+            "witness": "KeyPath"
+           }
+          ],
+          "revealed_amount": "0"
+         },
+         "outputs_statement": {
+          "outputs": [
+           {
+            "output": {
+             "commitment": "a4e5b2d45401da7fcff14d2bf19028c5dfb1dd980ea0bbe96215dc16f88c8d43",
+             "sender_public_nonce": "88cc2e728f850835a50de23ffac70dd9d6a3fc7a484a909dbab7452396d1be69",
+             "encrypted_data": "82b3c646882a93fd3a02bacd3b6d509822f59980b9718060b893024da6a33690049c73bf57d4e63ce3688023551ba3aae160b8665cee75a5b580551913cb06f39978f5d304b4cdba56c254a06dca4f0b3bdc70d8487146804d72594832551ebb558b37df9229dd35df7afc12468246aa",
+             "minimum_value_promise": 0,
+             "viewable_balance_proof": null
+            },
+            "auth": {
+             "Key": "0082fe5f98e3905bf9f9a6b6c2f4a166b3cc1f123e4f639a9d4f2be891888004"
+            },
+            "tag": 2977380603
+           },
+           {
+            "output": {
+             "commitment": "46f3b3f6b47ec26a3cc0757f95e72dec96685597c826fa3d3e3e3cf2ff3b4d3a",
+             "sender_public_nonce": "7cb45ba4ccb776337c0307c681abe16f4d97bb63a9f0119cb570a29e5f6f4b0f",
+             "encrypted_data": "bfe82b0852545f448083ab68d43829a4ec4e0f25d49d67fdc22afbfe53e5e1acaca3f2fab14a613388ca6d6efc16d4cafdbe1623a4e09d6bd021d4537577d566e968f6f73bc5893297337ded43502e57",
+             "minimum_value_promise": 0,
+             "viewable_balance_proof": null
+            },
+            "auth": {
+             "Key": "5cdaf3f865df6fd1b284eb8f4a6aa3ba64aedfa91c2008ad0348d96870a0685c"
+            },
+            "tag": 2793937757
+           }
+          ],
+          "revealed_output": {
+           "amount": "15243",
+           "receiver": "324cbc8071e9cfeac5b13984d61ea28c8fcc4b6390b0be3c486a9b9c86e3d076"
+          },
+          "agg_range_proof": "0114461ebbc16279fa45771b90fa345ca4623eeaa1025600ccb3fd843707ba8e0e98db7c031cae723c86777303eb121a8d1301f96675d966faa6b0b4c96b15e75e9e52a9468a5e80efcce702f39d935e6c51fa264b36a37e230746918b72c4e7015c73ba72b57c72ac916a96aca12d5464d7502b59f4398c745bccc56b60d39826f6cb82d805a1cc2d8cfd7b00d2dc83460e7c1a2908bd1fd8a51148704762b3071571885b05d74cbdad29b156e0e0e5aea3008ab33d0f01474447bb7d3a6529007ef5cd417b3e035c2e2586d598eaf0f196de72d99563d096047953782108ce6cc06df80fd051ee12738805fa068fb1666da2bbb3f12daba3d954dc704b0e3d5dfac0cd058b48d7e53b0899cc995569de52e4cbfe9aa025c0c55b0d5441a65f1bbaa2566e5b276aaadeb7b7bb02abd2c435c9b206932b3a0491789259c7e9a03ea63a871f93373447aa916b1c342bbf8226c307f1cf754ddf6b29af790c15a75ef05098a87ff7ea618901c4788c479f92d8633f7b69e2e6f67bc5dff8d4f3d411469ce0da94532837f5bb9b21f35778a6fefb5af37e496349d086f35aed978b277897ecf8a85cab4a5aedb8845c43f6433010f467bf12a69214b0aec17c88c53bf27ea2078280a40b0b7988a5e12db973ca6f3377adceb27df1ffe56eadcaa60ac89434def1b58340abee86ec4bd815ac5cac3e7a03c213c39c787457ba0cbd1da4d53ac6226609845b2a2811719ac51cdb7213c33e073a01544a0956e0e8a83bd09c95be31820bd35a314181e6727a8f71452364167b9f25293dff143ced9a1d06aa30a5b9768e5ed0fec81851255bb2d4d4cea05651225f3fc267140115936a24f5c47951d364b54ef0f748ecc8e5611473423c632690bdae7b46f1d2249b60"
+         },
+         "balance_proof": {
+          "public_nonce": "2e048e4a4fcfce02d78f6c2495258e626e0e5809beaa1b541558efd25667cd38",
+          "signature": "7ac8c932d1067b7a9813053e081b2c363ee6a1fb3158cfa75be6e7e3fec0a30c"
+         },
+         "covenant_claims": []
+        },
+        "revealed_input_bucket": null
+       }
+      },
+      {
+       "PutLastInstructionOutputOnWorkspace": {
+        "key": 0
+       }
+      },
+      {
+       "PayFeeFromBucket": {
+        "bucket": {
+         "id": 0,
+         "offset": null
+        }
+       }
+      }
+     ],
+     "instructions": [],
+     "inputs": [
+      {
+       "substate_id": "resource_0101010101010101010101010101010101010101010101010101010101010101",
+       "version": 0,
+       "is_write": false
+      },
+      {
+       "substate_id": "utxo_0101010101010101010101010101010101010101010101010101010101010101_926d3629b1ab85ba31059de86ba4059dc5bd315328f80f72cffa79863cf16845",
+       "version": 0,
+       "is_write": true
+      }
+     ],
+     "min_epoch": null,
+     "max_epoch": 12748,
+     "is_seal_signer_authorized": true,
+     "dry_run": false,
+     "blob_hashes": [],
+     "blob_sizes": [],
+     "nonce": 0
+    },
+    "signatures": [
+     {
+      "public_key": "24dde05bbb6d23c4d0682b3dd5135c481f3a7dc1c2c3030a1fdfc4a983b08f31",
+      "signature": {
+       "public_nonce": "04d11b5159b3da669d87d72bfe21775ba1c53b2ce7792b0e96bea8dd773b8018",
+       "signature": "573416f3b74ee19bf27fc7b0ebc602ebe247bf8459cdc3db95c6fc0e5a616f0e"
+      }
+     }
+    ]
+   },
+   "seal_signature": {
+    "public_key": "324cbc8071e9cfeac5b13984d61ea28c8fcc4b6390b0be3c486a9b9c86e3d076",
+    "signature": {
+     "public_nonce": "d605bf11f70fcbabddfd210cc2ccaf0cdb06e8b346169b93829f05fc2db4b83e",
+     "signature": "5ace1597e5844648770daade89160df370851f9a7d79cd1f79406f6e808d5a02"
+    }
+   }
+  }
+ },
+ "created_at": "2026-10-30 17:36:04.0",
+ "summary": {
+  "outcome": "Commit",
+  "total_fees_paid": 15243,
+  "finalized_at": "2026-10-30 17:36:13.0"
+ },
+ "rejected_reason": null,
+ "source": "local"
+}

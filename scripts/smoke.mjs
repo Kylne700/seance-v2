@@ -7,7 +7,7 @@
 // for them; a mocked indexer (forgottenRun) checks the same on purpose, with one demo it still holds beside the ones it dropped.
 // v2 adds: the ghost log (its rows are compared with the requests the debugging protocol saw), the lookup that reads the indexer's list of latest
 // transactions before it asks for an id (an id outside the list is asked for only on the button), a transaction opened from a saved file with no
-// request at all, and zero CSP violations during normal use.
+// request at all, and zero CSP violations during normal use. The "Send the Seance a secret" section is run with a stand-in window.tari and a mocked list (walletRun).
 // The offline copy (public/seance-offline.html, one file whose own policy blocks page requests) is opened from disk and from dist/, and is compared with the online build.
 // Writes evidence/smoke.txt and screenshots evidence/seance-*.png.
 //   npm run build && node scripts/smoke.mjs        (headless; no screen is used)
@@ -22,12 +22,13 @@ import puppeteer from 'puppeteer-core'
 import { EXPLORER_URL, INDEXER_URL, LEDGER_URL, MIRROR_URL, explorerTx, mirrorReceipt, receiptTx } from '../src/config.ts'
 import { parseTransaction } from '../src/chain.ts'
 import { amountOf, plural, short, tari } from '../src/format.ts'
+import { NO_WALLET } from '../src/wallet.ts'
 import { serveDir } from './serve.mjs'
 
 delete process.env.DISPLAY
 const APP = new URL('..', import.meta.url).pathname
 const DIST = join(APP, 'dist')
-const EVID = join(APP, 'evidence')
+const EVID = process.env.SMOKE_EVIDENCE ?? join(APP, 'evidence') // SMOKE_EVIDENCE=<dir> puts the screenshots (and nothing else of the evidence) elsewhere
 const PORT = Number(process.env.SMOKE_PORT ?? 4273)
 const OWN = `127.0.0.1:${PORT}`
 const BASE = `http://${OWN}/seance-v2/`
@@ -297,7 +298,7 @@ const shotEl = async (page, selector, name) => {
 }
 const seeLenses = (page) => page.evaluate(() => document.querySelector('.lensed').scrollIntoView())
 
-async function open(browser, { w, h = 800, url = BASE, reduce = false, intercept = null }) {
+async function open(browser, { w, h = 800, url = BASE, reduce = false, intercept = null, init = null }) { // init: { fn, arg } runs in the page before its own scripts (the stand-in wallet)
   const page = await browser.newPage()
   const mobile = w < 700
   await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: mobile, hasTouch: mobile })
@@ -311,6 +312,7 @@ async function open(browser, { w, h = 800, url = BASE, reduce = false, intercept
       for (const e of l.getEntries()) window.__long.push(Math.round(e.duration))
     }).observe({ type: 'longtask', buffered: true })
   })
+  if (init) await page.evaluateOnNewDocument(init.fn, init.arg)
   const log = { console: [], pageErrors: [], requests: [], failed: [] }
   page.on('console', (m) => log.console.push({ type: m.type(), text: m.text(), url: m.location()?.url ?? '' }))
   page.on('pageerror', (e) => log.pageErrors.push(String(e)))
@@ -1444,11 +1446,13 @@ async function fileRun(browser, w) {
   check(s.badge === 'File' && s.shownId === ledger.recent.transactions[1].transaction_id && !OURS.has(s.shownId) && s.source?.startsWith('From your file'), `${tag}: a file that holds a stranger's transaction opens, marked "File"`, `${s.badge} | ${String(s.shownId).slice(0, 8)}`)
   await laterChecks(page, log, `${tag}: a stranger's transaction from a file`, { key: s.checkedKey ? 'checked' : 'none' })
   none("a stranger's transaction from a file")
+  await armAudit(page) // the Auditor draws the good file's readings again: wait for them, axe measures contrast on settled colours
   s = await openFile(page, SAMPLE_FILE)
   check(s.badge === 'File' && s.shownId === t.id && s.netFile === 'Since you opened your file: 0 requests.', `${tag}: after the errors the good file opens again, and the log still says 0 requests`, `${s.badge} | ${s.netFile}`)
   none('after the errors')
 
   // the log, opened: the same rules as the rest of the page
+  await counted(page)
   await page.click('#netlog summary')
   await layout(page, `${tag}, the ghost log open`, { wide })
   await axe(page, `${tag}, the ghost log open`)
@@ -1662,12 +1666,16 @@ async function keyboardRun(browser) {
   await press('Tab')
   check((await active()) === 'txid', `${tag}: Enter on the skip link, then Tab, lands in the id field`, await active())
   await press('Tab', 6)
-  check((await active()) === 'mode-switch', `${tag}: six more Tabs reach the mode switch (look, summon, open file, demo, hold, switch)`, await active())
+  check((await active()) === 'wallet-memo', `${tag}: six more Tabs (look, summon, open file, demo, hold, the words field) reach the words field of "Send the Seance a secret"`, await active())
+  await press('Tab')
+  check((await active()) === 'wallet-send', `${tag}: one more Tab reaches its "Review my words" button`, await active())
+  await press('Tab')
+  check((await active()) === 'mode-switch', `${tag}: one more Tab reaches the mode switch`, await active())
   await press('Space')
   let s = await snap(page)
   check(s.badge === 'Recorded' && s.pressed === 'true', `${tag}: Space on the mode switch turns recorded mode on`)
   await page.keyboard.down('Shift')
-  await press('Tab', 6)
+  await press('Tab', 8)
   await page.keyboard.up('Shift')
   check((await active()) === 'txid', `${tag}: Shift+Tab walks back to the id field`, await active())
   await page.keyboard.type(tx(5).id)
@@ -1848,7 +1856,7 @@ const KEX_UNKNOWN = 'Cloudflare did not say which key exchange this connection u
 const KEX_OTHER = 'Cloudflare named a key exchange this page does not know, so it cannot say whether it is post-quantum.'
 
 // The indexer as the lookups see it: the two listed transactions, a 404 for any id, and Cloudflare's trace (`state.gate`, when set, holds the answer back).
-function mockIndexer() {
+function mockIndexer(list = () => ledger.recent.transactions) { // list(n): the transactions the nth look at the list gets (n starts at 1)
   const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' }
   const state = { kex: 'X25519MLKEM768', gate: null, asked: [], lists: 0, traces: 0 }
   const intercept = (r) => {
@@ -1862,7 +1870,7 @@ function mockIndexer() {
     }
     if (u.pathname === '/transactions/recent') {
       state.lists++
-      return void r.respond({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ transactions: ledger.recent.transactions }) })
+      return void r.respond({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ transactions: list(state.lists) }) })
     }
     const id = u.pathname.split('/').pop()
     state.asked.push(id)
@@ -1977,6 +1985,234 @@ async function connectionRun(browser, w) {
   await page.close()
 }
 
+// ---------- "Send the Seance a secret": a stand-in wallet, the real page ----------
+// window.tari is replaced by a stand-in that answers the way the Sapient wallet did in the spike. Nothing real is sent and no real wallet is touched. Inside these pages every timer of
+// 20 s or more runs after 150 ms (so the 9 looks at the list take about a second), the list is the mocked indexer's, and no id is ever answered: the mocked indexer counts every request for one.
+const WALLET_FIX = JSON.parse(readFileSync(join(APP, 'test/fixtures/wallet-send.json'), 'utf8')) // the entry the real list held after the spike's send: Bob's note reads 31415 and "spike test"
+const WALLET_COMMITMENT = 'a4e5b2d45401da7fcff14d2bf19028c5dfb1dd980ea0bbe96215dc16f88c8d43'
+const WALLET_SENTINEL = 'otl_esm_1' + 'zq'.repeat(20) // stands in for the visitor's address: it must be found nowhere
+const WALLET_WORDS = 'spike test'
+const WALLET_READY = /^A wallet is available in this browser\. /
+const WALLET_FOUND = /^Found it\. The page found your payment among the indexer's latest \d+ transactions by its commitment, and asked no indexer for it by id\. /
+const WALLET_MISSING = /^Your payment is not in the indexer's latest 40 transactions yet\. /
+const WALLET_REFUSED = 'You said no in the wallet, so nothing was sent.'
+
+// runs in the page before any of its own scripts
+const walletInit = (cfg) => {
+  const calls = []
+  window.__tariCalls = calls
+  window.__tariHold = !!cfg.hold
+  window.tari = {
+    async request(call) {
+      calls.push({ method: call.method, params: call.params === undefined ? null : JSON.parse(JSON.stringify(call.params)) })
+      switch (call.method) {
+        case 'tari_requestAccounts':
+          return [{ address: cfg.sentinel }]
+        case 'tari_getNetwork':
+          return cfg.network
+        case 'tari_getCapabilities':
+          return { privateSpend: true }
+        case 'tari_createTransactionRequest':
+          return { requestId: 'req-1' }
+        case 'tari_getTransactionRequest':
+          return { status: window.__tariHold ? 'pending' : cfg.refuse ? 'rejected' : 'approved' }
+        case 'tari_submitTransactionRequest':
+          return { transactionId: cfg.txid, recipientCommitment: cfg.commitment, recipientSubstateId: 'component_' + 'ab'.repeat(32), minimumValuePromise: '0' }
+        default:
+          throw Object.assign(new Error(`The stand-in wallet has no ${call.method}`), { code: -32601 })
+      }
+    },
+  }
+  const real = window.setTimeout.bind(window)
+  window.setTimeout = (f, ms, ...a) => real(f, ms >= 20000 ? 150 : ms, ...a)
+}
+const walletCfg = (o = {}) => ({ fn: walletInit, arg: { sentinel: WALLET_SENTINEL, network: 'esmeralda', txid: WALLET_FIX.transaction_id, commitment: WALLET_COMMITMENT, hold: false, refuse: false, ...o } })
+const noteFrom = (at) => (n) => (n < at ? ledger.recent.transactions : [WALLET_FIX, ...ledger.recent.transactions]) // the nth look at the list holds the payment from look `at` on
+
+const walletState = (page) =>
+  page.evaluate(() => {
+    const $ = (id) => document.getElementById(id)
+    const off = (id) => $(id).getAttribute('aria-disabled') === 'true'
+    return {
+      shown: !!$('wallet').offsetParent,
+      status: $('wallet-status').textContent,
+      statusClass: $('wallet-status').className,
+      review: !$('wallet-review').hidden,
+      echo: $('wallet-echo').textContent,
+      echoKids: $('wallet-echo').children.length,
+      to: $('wallet-to').textContent,
+      more: !$('wallet-more').hidden,
+      field: $('wallet-memo').value,
+      readOnly: $('wallet-memo').readOnly,
+      max: $('wallet-memo').maxLength,
+      off: { send: off('wallet-send'), confirm: off('wallet-confirm'), change: off('wallet-change'), again: off('wallet-again') },
+      warn: $('wallet-warn').innerText,
+      calls: window.__tariCalls?.map((c) => c.method) ?? null,
+    }
+  })
+const typeWords = async (page, text) => {
+  await page.$eval('#wallet-memo', (el) => {
+    el.focus()
+    el.select()
+  })
+  await page.keyboard.type(text) // replaces whatever was selected
+}
+const walletAny = (page, re) => until(page, (src) => new RegExp(src).test(document.getElementById('wallet-status').textContent), re.source, 30000)
+const walletSays = (page, text) => until(page, (t) => document.getElementById('wallet-status').textContent === t, text, 30000)
+const reviewWords = async (page, text) => {
+  await typeWords(page, text)
+  await page.click('#wallet-send')
+  await until(page, () => !document.getElementById('wallet-review').hidden, undefined, 8000)
+}
+const walletLeaks = (page, log, tag) =>
+  page.evaluate(
+    (secret) => {
+      const where = { page: document.documentElement.outerHTML + document.body.innerText, storage: JSON.stringify(localStorage) + JSON.stringify(sessionStorage), cookie: document.cookie, title: document.title, address: location.href }
+      return Object.entries(where).filter(([, v]) => v.includes(secret)).map(([k]) => k)
+    },
+    WALLET_SENTINEL,
+  ).then((kept) => {
+    const logged = log.console.some((c) => c.text.includes(WALLET_SENTINEL)) || log.pageErrors.some((e) => e.includes(WALLET_SENTINEL)) || log.requests.some((r) => `${r.url} ${r.post} ${r.headers}`.includes(WALLET_SENTINEL))
+    check(kept.length === 0 && !logged, `${tag}: the visitor's address (a marker value here) is not in the page, storage, cookies, title, address, console or any request`, kept.join(', '))
+  })
+// what Bob's key reads in the fixture's note, in the page's own units
+const walletReads = () => [{ amount: amountOf(TARI_RESOURCE, 31415), memo: `“${WALLET_WORDS}”` }]
+
+async function walletRun(browser, w) {
+  const tag = `send a secret, ${w}px`
+  const wide = w >= 700
+  const m = mockIndexer(noteFrom(2)) // look 1: the payment is not in the list yet; look 2: it is
+  const { page, log } = await open(browser, { w, intercept: m.intercept, init: walletCfg({ hold: true }) })
+  await walletAny(page, WALLET_READY)
+  let s = await walletState(page)
+  check(s.shown && s.max === 40 && s.field === '' && !s.review && !s.more, `${tag}: the section is on the page, the field takes 40 characters and starts empty, and no review is open`, JSON.stringify({ shown: s.shown, max: s.max, review: s.review }))
+  check(/^Bob's view key is published on this page, so anyone can read what you send, now and later: send a ghost story, not a password\.$/.test(s.warn), `${tag}: the warning that Bob's view key is public stands beside the field`, s.warn)
+  check(s.calls?.length === 0 && m.state.lists === 0 && m.state.asked.length === 0, `${tag}: nothing has been asked of the wallet or of the indexer before the visitor acts`, JSON.stringify([s.calls, m.state.lists]))
+
+  await typeWords(page, 'x'.repeat(60))
+  s = await walletState(page)
+  check(s.field.length === 40, `${tag}: the field stops at 40 characters`, String(s.field.length))
+  await reviewWords(page, '<b>x</b>')
+  s = await walletState(page)
+  check(s.echo === '“<b>x</b>”' && s.echoKids === 0, `${tag}: the review shows the words as text (no element is made from them)`, s.echo)
+  await page.click('#wallet-change')
+  s = await walletState(page)
+  check(!s.review && s.calls.length === 0, `${tag}: "Change my words" closes the review without asking the wallet`, '')
+  await reviewWords(page, WALLET_WORDS)
+  s = await walletState(page)
+  check(s.echo === `“${WALLET_WORDS}”` && /^To Bob, the demo recipient \(otl_esm_1[0-9a-z]+…[0-9a-z]+\): 0\.031415 tTARI \(testnet TARI\), and a fee on top, paid privately\.$/.test(s.to) && s.calls.length === 0, `${tag}: the review shows the words and the recipient and the amount, and still nothing has gone to the wallet`, `${s.echo} | ${s.to}`)
+  await shotEl(page, '#wallet', `seance-wallet-${w}-2-ready.png`)
+
+  await armReading(page)
+  await armAudit(page)
+  await page.click('#wallet-confirm')
+  await walletAny(page, /^Waiting for your answer in the wallet\. /)
+  s = await walletState(page)
+  check(s.readOnly && s.off.send && s.off.confirm && s.off.change && !s.review, `${tag}: while the wallet is being waited for, the field is locked and the buttons are off`, JSON.stringify(s.off))
+  const create = await page.evaluate(() => window.__tariCalls.find((c) => c.method === 'tari_createTransactionRequest')?.params ?? null)
+  check(
+    JSON.stringify(create) === JSON.stringify({ kind: 'sendPrivately', resourceAddress: TARI_RESOURCE, recipientWalletAddress: keys.bob.address, amount: '31415', memo: WALLET_WORDS, feeType: 'private', enforceFeeType: true }),
+    `${tag}: the wallet is asked for a private payment of 31415 to Bob's address with the words, a private fee, and no minimumValuePromise`,
+    JSON.stringify(create),
+  )
+  await shotEl(page, '#wallet', `seance-wallet-${w}-3-sending.png`)
+  await page.evaluate(() => {
+    window.__tariHold = false // the visitor says yes in the wallet
+  })
+  await walletAny(page, WALLET_FOUND)
+  await settled(page)
+  s = await heard(page)
+  const ws = await walletState(page)
+  check(WALLET_FOUND.test(ws.status) && ws.statusClass === 'status info' && ws.field === '' && !ws.readOnly && !ws.more && !ws.review, `${tag}: the page says it found the payment by its commitment and asked no indexer for it by id; the field is free again`, ws.status.slice(0, 150))
+  check(s.shownId === WALLET_FIX.transaction_id && LISTED.test(s.source ?? '') && s.checkedKey === 'bob' && s.hash === '', `${tag}: the Stranger shows the transaction found in the list (indexer not asked for its id), Bob's key is selected and the address bar names no id`, `${s.shownId} | ${s.source} | ${s.checkedKey} | ${s.hash}`)
+  check(s.quiet === null && JSON.stringify(s.readings) === JSON.stringify(walletReads()), `${tag}: the Medium (Bob's key) reads the amount and the visitor's words`, JSON.stringify(s.readings))
+  s = await counted(page)
+  check(s.auditEmpty?.startsWith(AUDIT_NO_PROOF) && s.auditReadings.length === 0 && s.leaks.length > 0 && s.polt.length > 0, `${tag}: the Auditor says plainly that a plain TARI payment has no audit key to count with, as for any listed one; the leaks panel and the Poltergeist have taken the payment`, `${s.auditEmpty ?? ''} | ${s.leaks.length} leaks, ${s.polt.length} tricks`)
+  const methods = await page.evaluate(() => window.__tariCalls.map((c) => c.method))
+  const order = methods.filter((x, i) => methods.indexOf(x) === i)
+  check(
+    JSON.stringify(order) === JSON.stringify(['tari_requestAccounts', 'tari_getNetwork', 'tari_getCapabilities', 'tari_createTransactionRequest', 'tari_getTransactionRequest', 'tari_submitTransactionRequest']) &&
+      methods.filter((x) => x === 'tari_submitTransactionRequest').length === 1 &&
+      methods.filter((x) => x === 'tari_getTransactionRequest').length >= 2,
+    `${tag}: the wallet calls were connect, network, capabilities, create, poll, submit (once), and nothing else (never getTransactionResult or requestViewAccess)`,
+    methods.join(' '),
+  )
+  check(m.state.asked.length === 0 && m.state.lists === 2, `${tag}: the indexer was asked for the list twice (not there at look 1, there at look 2) and for no id`, `lists ${m.state.lists}, ids asked ${m.state.asked.length}`)
+  const rows = s.netRows.filter((r) => r.cells[3]?.startsWith('/transactions/recent'))
+  check(namedInHead(s.netHead) === '0' && rows.length === 2, `${tag}: the ghost log lists both looks at the list like Summon's, and no request names an id`, `${s.netHead} | ${rows.length} list rows`)
+  await walletLeaks(page, log, tag)
+  const csp = await cspSeen(page, log)
+  check(csp.length === 0 && log.pageErrors.length === 0 && consoleBad(log).length === 0, `${tag}: 0 Content Security Policy violations, no page error, no console error`, csp.concat(log.pageErrors, consoleBad(log).map((c) => c.text)).join(' | ').slice(0, 300))
+  await netlogChecks(page, log, tag)
+  await page.evaluate(() => scrollTo(0, 0))
+  await shotEl(page, '#wallet', `seance-wallet-${w}-4-found.png`)
+  await seeLenses(page)
+  await shot(page, `seance-wallet-${w}-4-found-read-by-the-ghosts.png`)
+  await layout(page, tag, { wide })
+  await axe(page, tag)
+  await page.close()
+}
+
+// the other ways it can go, at one width
+async function walletEdgeRun(browser) {
+  // no wallet
+  let m = mockIndexer()
+  let { page, log } = await open(browser, { w: 1280, intercept: m.intercept })
+  await walletSays(page, NO_WALLET)
+  await typeWords(page, WALLET_WORDS)
+  await page.click('#wallet-send')
+  await walletSays(page, NO_WALLET) // it looks for the wallet once more (up to 3 s), then says so again
+  let s = await walletState(page)
+  check(s.status === NO_WALLET && !s.review && s.calls === null && m.state.lists === 0 && m.state.asked.length === 0, 'send a secret, no wallet: the page says what is needed, opens no review, and asks nobody for anything', s.status.slice(0, 120))
+  await shotEl(page, '#wallet', 'seance-wallet-1280-1-no-wallet.png')
+  await page.close()
+
+  // the visitor says no in the wallet
+  m = mockIndexer()
+  ;({ page, log } = await open(browser, { w: 1280, intercept: m.intercept, init: walletCfg({ refuse: true }) }))
+  await walletAny(page, WALLET_READY)
+  await reviewWords(page, WALLET_WORDS)
+  await page.click('#wallet-confirm')
+  await walletSays(page, WALLET_REFUSED)
+  s = await walletState(page)
+  const methods = s.calls
+  check(s.statusClass === 'status info' && !s.readOnly && !s.off.send && s.field === WALLET_WORDS && !methods.includes('tari_submitTransactionRequest') && m.state.lists === 0, 'send a secret, refused: a quiet message (not an error), the words stay, nothing was submitted and the list was not fetched', `${s.statusClass} | ${s.field} | lists ${m.state.lists}`)
+  await page.close()
+
+  // wrong network
+  m = mockIndexer()
+  ;({ page, log } = await open(browser, { w: 1280, intercept: m.intercept, init: walletCfg({ network: 'mainnet' }) }))
+  await walletAny(page, WALLET_READY)
+  await reviewWords(page, WALLET_WORDS)
+  await page.click('#wallet-confirm')
+  await walletAny(page, /^Your wallet is not on the Esmeralda testnet, so nothing was sent\. /)
+  s = await walletState(page)
+  check(s.statusClass === 'status error' && JSON.stringify(s.calls) === JSON.stringify(['tari_requestAccounts', 'tari_getNetwork']) && m.state.lists === 0, 'send a secret, wrong network: the page stops after the network check, says so, and asks for nothing more', JSON.stringify(s.calls))
+  await page.close()
+
+  // not in the newest 40 yet: 9 looks, then "Look again" finds it
+  m = mockIndexer(noteFrom(10))
+  ;({ page, log } = await open(browser, { w: 1280, intercept: m.intercept, init: walletCfg() }))
+  await walletAny(page, WALLET_READY)
+  await armReading(page)
+  await reviewWords(page, WALLET_WORDS)
+  await page.click('#wallet-confirm')
+  await walletAny(page, WALLET_MISSING)
+  s = await walletState(page)
+  const snapMissing = await snap(page)
+  check(s.more && m.state.lists === 9 && m.state.asked.length === 0 && /asked nobody for your payment by its id\./.test(s.status) && snapMissing.ask === false, 'send a secret, not found: after 9 looks the page says so plainly, offers "Look again", asks no indexer by id and offers no "Ask for it anyway"', `${s.status.slice(0, 200)} | lists ${m.state.lists}`)
+  await shotEl(page, '#wallet', 'seance-wallet-1280-5-not-found.png')
+  await page.click('#wallet-again')
+  await walletAny(page, WALLET_FOUND)
+  await settled(page)
+  s = await heard(page)
+  const after = await walletState(page)
+  check(m.state.lists === 10 && m.state.asked.length === 0 && !after.more && JSON.stringify(s.readings) === JSON.stringify(walletReads()), 'send a secret, "Look again": one more look finds it, the Medium reads it, and still no id was asked for', `lists ${m.state.lists}, ids asked ${m.state.asked.length}`)
+  await walletLeaks(page, log, 'send a secret, not found then found')
+  await netlogChecks(page, log, 'send a secret, not found then found')
+  await page.close()
+}
+
 // ---------- the built files ----------
 function staticChecks() {
   const html = readFileSync(join(DIST, 'index.html'), 'utf8')
@@ -2055,6 +2291,9 @@ try {
   section('the connection check and what a lookup of a listed id sends (mocked indexer and a fixture answer for Cloudflare; no real request)')
   await scenario('lookup pattern', () => lookupPatternRun(offline))
   for (const w of [1280, 375]) await scenario(`connection check ${w}`, () => connectionRun(offline, w))
+  section('send the Seance a secret (a stand-in wallet and a mocked indexer: nothing real is sent, and no id is asked for)')
+  for (const w of [1280, 375]) await scenario(`wallet ${w}`, () => walletRun(offline, w))
+  await scenario('wallet edges', () => walletEdgeRun(offline))
   section('a transaction opened from a saved file (no network at all from the moment the file is chosen)')
   for (const w of [1280, 375]) await scenario(`file ${w}`, () => fileRun(offline, w))
   await scenario('uppercase link', () => hashRun(offline))
