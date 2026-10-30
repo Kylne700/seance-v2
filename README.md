@@ -192,6 +192,30 @@ The token below is a new one (the 2026-10-18 token was left as it is and is not 
 
 What the Auditor does not claim: it does not read memos, it does not spend, it counts only the demo token's notes, and it searches only the range above.
 
+## Ghosts from later
+
+Two more ghosts, below the Poltergeist on the page. Both run in the page on data it already holds and make no request of their own.
+
+**The Doppelganger** copies a key and reads with it. It is a ladder of four rungs: no key, a recipient's view key, a token's audit key, a spend (account) key. For each rung the page says what the key opens, what it does not open, whether it can spend, and whether the owner can stop it. Two lines are counted now, on the transactions the page already holds: the recorded demo payments or the latest transactions it downloaded, plus the one on the table (for a saved file, that transaction alone). One counts the sealed notes the key chosen in the Medium opens, what they are worth, and how many of them the window shows as spent; the line says whether that key was typed into the Medium or is a published demo key. The other counts the notes of a token that carry an audit copy of the amount. It tries no key, because every such note is open to the token's audit key. What a key reads in the past or the future is described, not counted, because the indexer's history is incomplete. "Cannot spend" is by the code and was not tried.
+
+**The Revenant** is a computer that can solve discrete logarithms, for example a large quantum computer running Shor's algorithm. What is on the chain is public data and can be kept: harvest now, decrypt later. The page shows what such a computer would read, in three tiers (chain data only; plus the recipient's address; a token with an audit key), in a table field by field for the transaction on the table, and in separate lines for what is not reading: notes not yet spent could be spent, a commitment could be opened to any amount, signatures could be forged. It says nothing about when or whether such a computer will exist. For the demo payments a labelled Simulation stands in for it: the published demo view key plays the solved view key and the published demo audit key plays the solved audit key, read through the page's own code (`src/decrypt.ts`, `src/auditor.ts`). Every simulated value sits inside an element whose visible label says Simulation. For a transaction that is not a demo payment the page shows the table and the tiers and no simulated value, and it decrypts nothing.
+
+**No key-free receipt.** Tari's amount-only proof (`CommitmentValueProof`) is not exported by its WebAssembly package, in 0.46.1 or in v0.48.0, and what is exported could only make a receipt that hands over a one-note secret, which also opens that note's blinding factor and memo. Porting the proof would be new cryptography, so this page makes no receipt.
+
+Sources, all public. The Tari code is at the tag v0.46.1, the version this page pins ([`tari-ootle`](https://github.com/tari-project/tari-ootle/tree/v0.46.1)):
+
+- A note is sealed to the destination's view key and locked to its account key: [`stealth_outputs.rs` L950-L966](https://github.com/tari-project/tari-ootle/blob/v0.46.1/crates/wallet/sdk/src/apis/stealth_outputs.rs#L950-L966). Spending needs the account secret: [`kdfs.rs` L58-L69](https://github.com/tari-project/tari-ootle/blob/v0.46.1/crates/wallet/crypto/src/kdfs.rs#L58-L69).
+- A token with an audit key requires the audit copy on its notes: [`elgamal.rs` L20-L39](https://github.com/tari-project/tari-ootle/blob/v0.46.1/crates/engine_types/src/crypto/elgamal.rs#L20-L39). The audit key is a field of the token with a getter, and no function in the code we read changes it (code reading, v0.46.1 and v0.48.0): [`resource.rs` L60](https://github.com/tari-project/tari-ootle/blob/v0.46.1/crates/engine_types/src/resource.rs#L60), [L139-L140](https://github.com/tari-project/tari-ootle/blob/v0.46.1/crates/engine_types/src/resource.rs#L139-L140).
+- The amount-only proof: [`value_proof.rs` L10-L40](https://github.com/tari-project/tari-ootle/blob/v0.46.1/crates/template_lib_types/src/crypto/value_proof.rs#L10-L40). The functions the WebAssembly package exports: [`lib.rs` at v0.46.1](https://github.com/tari-project/tari-ootle/blob/v0.46.1/crates/ootle_wasm/wasm/src/lib.rs) and [at v0.48.0](https://github.com/tari-project/tari-ootle/blob/v0.48.0/crates/ootle_wasm/wasm/src/lib.rs).
+
+The papers:
+
+- Roetteler, Naehrig, Svore, Lauter, "Quantum resource estimates for computing elliptic curve discrete logarithms", [arXiv:1706.06752](https://arxiv.org/abs/1706.06752): Shor's algorithm computes discrete logarithms on elliptic curves over prime fields.
+- Bünz, Bootle, Boneh, Poelstra, Wuille, Maxwell, "Bulletproofs" ([author copy](https://web.stanford.edu/~buenz/pubs/bulletproofs.pdf)), section 4.6: "An adversary that could break the discrete logarithm assumption could generate acceptable range proofs for a value outside the correct range. On the other hand, the commitments are perfectly hiding and Bulletproofs are perfect zero-knowledge, so that even an all powerful adversary cannot learn which value was committed to." Definition 7, same paper: "The Pedersen vector commitment is perfectly hiding and computationally binding under the discrete logarithm assumption."
+- Chung, Han, Ju, Kim, Seo, "Bulletproofs+: Shorter Proofs for a Privacy-Enhanced Distributed Ledger", IEEE Access vol. 10, [doi:10.1109/ACCESS.2022.3167806](https://doi.org/10.1109/ACCESS.2022.3167806) ([repository copy](https://scholarworks.bwise.kr/hanyang/bitstream/2021.sw.hanyang/138821/1/Bulletproofs_Shorter_Proofs_for_a_Privacy-Enhanced_Distributed_Ledger.pdf)), Theorem 3 (the aggregate range proof): "perfect completeness, perfect honest verifier zero-knowledge and computational witness extended emulation".
+
+The quotes and the code lines were checked against these links on 2026-10-30 (Bulletproofs+ in its repository copy).
+
 ## Checks
 
 | Command | What it checks |
