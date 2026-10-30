@@ -38,7 +38,7 @@ const MADE_UP = 'ab'.repeat(32) // an id nobody holds, so no list holds it eithe
 const ID_LIKE = /[0-9a-f]{6}…[0-9a-f]{6}|[0-9a-f]{32}/i // a transaction id, whole or as the log shortens it
 const SIZE = /^(\d+ bytes|[\d.]+ KB)$/ // how the log writes a size it knows ("unknown" otherwise)
 const known = (s) => SIZE.test(s) && s !== '0 bytes'
-const HEAD = /^This page sent (\d+) requests? to (\d+) hosts?; your keys were in none of them\.$/
+const HEAD = /^This page sent (\d+) requests? to (\d+) hosts?; (\d+) named a transaction id; your keys were in none of them\.$/
 
 const must = (ok, what) => {
   if (!ok) throw new Error(`not kept: ${what}`)

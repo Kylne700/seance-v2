@@ -251,3 +251,8 @@ table.net { border-collapse: collapse; width: 100%; min-width: 48rem; font-size:
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* The connection check in the ghost log (index.html #netlog; hidden in the offline copy by .online) */
+.conn-check { max-width: 46rem; margin: 12px 0 8px; }
+.conn-check .hint { margin: 8px 0; }
+.conn-out { margin: 8px 0 0; }

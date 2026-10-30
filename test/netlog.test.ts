@@ -3,9 +3,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import ledger from '../ledger.json'
 import { INDEXER_URL, RECENT_LIMIT } from '../src/config.ts'
+import { TRACE_URL } from '../src/conncheck.ts'
 import { createData, demoKeys, demos } from '../src/data.ts'
 import { decryptOutput } from '../src/decrypt.ts'
-import { createNetlog, type Timing } from '../src/netlog.ts'
+import { createNetlog, namesId, type Timing } from '../src/netlog.ts'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -66,8 +67,10 @@ describe('the demo keys are in none of the requests', () => {
     expect(entries.every((e) => e.host === INDEXER)).toBe(true)
     expect(entries.filter((e) => e.kind === 'list')).toHaveLength(1)
     expect(JSON.stringify(entries).toLowerCase().includes(secrets[0].toLowerCase())).toBe(false)
-    expect(log.summary()).toMatchObject({ requests: fake.mock.calls.length, hosts: 1, leaked: false, strays: 0 })
-    expect(log.headline()).toBe(`This page sent ${fake.mock.calls.length} requests to 1 host; your keys were in none of them.`)
+    const byId = fake.mock.calls.filter(([url]) => /\/transactions\/[0-9a-f]{64}$/.test(String(url))).length // counted here from the addresses that really went out
+    expect(byId).toBe(demos.length + 1)
+    expect(log.summary()).toMatchObject({ requests: fake.mock.calls.length, hosts: 1, named: byId, leaked: false, strays: 0 })
+    expect(log.headline()).toBe(`This page sent ${fake.mock.calls.length} requests to 1 host; ${byId} named a transaction id; your keys were in none of them.`)
   })
 
   it('has teeth: a key in the address, in a header or in a body is caught, whatever its case', async () => {
@@ -246,7 +249,7 @@ describe('the browser\'s own list of what it loaded (Resource Timing)', () => {
     ])
     expect(log.entries()[1].in).toBe(1_885_000)
     expect(log.summary()).toMatchObject({ requests: 2, hosts: 1, strays: 0 })
-    expect(log.headline()).toBe('This page sent 2 requests to 1 host; your keys were in none of them.')
+    expect(log.headline()).toBe('This page sent 2 requests to 1 host; 0 named a transaction id; your keys were in none of them.')
   })
 
   it('a request the wrapper already wrote down is completed, not counted twice, one entry for one request', async () => {
@@ -266,7 +269,7 @@ describe('the browser\'s own list of what it loaded (Resource Timing)', () => {
     expect(log.entries()[2]).toMatchObject({ viaWrapper: false, kind: 'list' })
     expect(log.entries()[2].warn).toContain("went around this page's request code")
     expect(log.summary().strays).toBe(1)
-    expect(log.headline()).toBe("This page sent 3 requests to 1 host; your keys were in none of them. (1 request went around the page's own request code, so only its address could be checked.)")
+    expect(log.headline()).toBe("This page sent 3 requests to 1 host; 0 named a transaction id; your keys were in none of them. (1 request went around the page's own request code, so only its address could be checked.)")
   })
 
   it('a fetch that never went through the wrapper is flagged, with the address it used, and a key in that address is still caught', () => {
@@ -315,13 +318,69 @@ describe('counting from a moment on', () => {
 describe('the headline', () => {
   it('counts requests and different hosts, in the singular too', async () => {
     const log = newLog()
-    expect(log.headline()).toBe('This page sent 0 requests to 0 hosts; your keys were in none of them.')
+    expect(log.headline()).toBe('This page sent 0 requests to 0 hosts; 0 named a transaction id; your keys were in none of them.')
     const f = log.wrap(echo())
     await f(`https://${INDEXER}/x`)
-    expect(log.headline()).toBe('This page sent 1 request to 1 host; your keys were in none of them.')
+    expect(log.headline()).toBe('This page sent 1 request to 1 host; 0 named a transaction id; your keys were in none of them.')
     await f(`https://${INDEXER}/y`)
     await f(`https://${SITE}/z`)
-    expect(log.headline()).toBe('This page sent 3 requests to 2 hosts; your keys were in none of them.')
+    expect(log.headline()).toBe('This page sent 3 requests to 2 hosts; 0 named a transaction id; your keys were in none of them.')
+  })
+
+  it('counts the requests whose address names a transaction id, not the requests of one kind (U8)', async () => {
+    const log = newLog()
+    const f = log.wrap(echo())
+    await f(`https://${INDEXER}/transactions/recent?limit=40`)
+    expect(log.summary().named).toBe(0)
+    await f(`https://${INDEXER}/transactions/${idN(7)}`)
+    await f(`https://${INDEXER}/transactions/recent?limit=40&last_id=${idN(8)}`) // a list request that carries an id is counted too
+    expect(log.summary()).toMatchObject({ requests: 3, named: 2 })
+    expect(log.headline()).toBe('This page sent 3 requests to 1 host; 2 named a transaction id; your keys were in none of them.')
+    expect(log.entries().map((e) => e.kind)).toEqual(['list', 'transaction', 'list']) // the kind is not what is counted
+  })
+
+  it('the K of a request seen only by the browser comes from its address too', () => {
+    const log = newLog()
+    log.seen({ name: `https://${INDEXER}/transactions/${idN(9)}`, initiatorType: 'fetch', startTime: 3 })
+    expect(log.summary().named).toBe(1)
+  })
+})
+
+describe('namesId: does an address name a transaction id (U8)', () => {
+  const ID = idN(0xabcdef)
+  const yes = [
+    `https://${INDEXER}/transactions/${ID}`,
+    `https://${INDEXER}/transactions/recent?limit=40&last_id=${ID}`,
+    `https://${INDEXER}/transactions/recent?last_id=null&last_id=${ID}`,
+    `https://${INDEXER}/transactions/${ID.toUpperCase()}`,
+    `https://${INDEXER}/transactions/${ID.replace('a', '%61')}`, // percent-encoded digits
+    `/transactions/${ID}`, // a relative address
+    `https://${INDEXER}/transactions/%zz/${ID}`, // a path the decoder refuses: the raw text is searched
+  ]
+  const no = [
+    `https://${INDEXER}/transactions/recent?limit=40`,
+    `https://${INDEXER}/transactions/recent?limit=40&last_id=`,
+    `https://${INDEXER}/transactions/recent?limit=40&last_id=null`,
+    `https://${INDEXER}/transactions/recent?limit=40&last_id=${ID.slice(1)}`, // 63 digits is no id
+    `https://${INDEXER}/transactions/${ID.slice(1)}`,
+    `https://${INDEXER}/transactions/${'g'.repeat(64)}`,
+    `https://${INDEXER}/cdn-cgi/trace`,
+    `https://${SITE}/seance-v2/assets/index-Bq3x9Zt1.js`,
+    `https://${SITE}/seance-v2/`,
+    'not an address',
+  ]
+  it.each(yes)('names one: %s', (a) => expect(namesId(a)).toBe(true))
+  it.each(no)('names none: %s', (a) => expect(namesId(a)).toBe(false))
+})
+
+describe('the connection check in the log', () => {
+  it('is its own kind of row, asks for no id and warns of nothing', async () => {
+    const log = newLog()
+    await log.wrap(echo('kex=X25519\n'))(TRACE_URL)
+    expect(log.entries()[0]).toMatchObject({ host: INDEXER, kind: 'check', path: '/cdn-cgi/trace', viaWrapper: true, warn: null })
+    expect(log.entries()[0].reveals).toContain('No transaction id.')
+    expect(log.summary()).toMatchObject({ requests: 1, hosts: 1, named: 0, leaked: false, strays: 0 })
+    expect(log.headline()).toBe('This page sent 1 request to 1 host; 0 named a transaction id; your keys were in none of them.')
   })
 })
 

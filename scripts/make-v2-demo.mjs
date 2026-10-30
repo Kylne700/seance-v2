@@ -190,7 +190,7 @@ try {
   await beat('log', 'The ghost log lists the requests the page made, and what each host learns from them.', 4.6, async () => {
     await scrollTo((await top('#netlog')) - 8, 1200)
     await page.evaluate(() => (document.querySelector('#netlog details').open = true))
-    const head = /^This page sent (\d+) requests? to (\d+) hosts?; your keys were in none of them\.$/.exec(await text('#net-head'))
+    const head = /^This page sent (\d+) requests? to (\d+) hosts?; (\d+) named a transaction id; your keys were in none of them\.$/.exec(await text('#net-head'))
     const rows = await netRows()
     must(head !== null && Number(head[1]) === rows.length && Number(head[2]) === new Set(rows.map((r) => r[2])).size, 'the headline does not count the rows')
     must(rows.every((r) => r[2] === SITE_HOST || (r[2] === INDEXER_HOST && r[3] === '/transactions/recent?limit=40')), 'a row for something other than the site and the list')
