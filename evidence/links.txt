@@ -1,4 +1,4 @@
-Links and recorded copies, checked 2026-10-29T20:24:33.230Z
+Links and recorded copies, checked 2026-10-29T20:52:49.605Z
 first indexer https://esme-indexer-a.ootle.tari.com, second indexer https://esme-indexer-b.ootle.tari.com, explorer https://explorer.tari.mw
 ok   e99ccae24789ef34dbba783c9675f90f89757043a5f456b6d521df6df60ae15b  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
 ok   e04e6e78021a71bdfa6902674a5401fb64efb54ce948c5c4e5fc287cf6074a7f  receipt: first 200, second 200  outcome Commit: true/true  agrees with the saved copy (outcome, fee, spent notes, epoch window)  identical: true  whole transaction by id (not judged): first 404, second 404
@@ -32,11 +32,11 @@ ok   second indexer: token resource_469b4ea86...  http 200  its view key is the 
 ok   explorer page for the token  http 200  lists a View key starting d0f610b1e6: true
 ok   link https://explorer.tari.mw  http 200
 ok   link https://ootle.tari.com  http 200
-FAIL link https://raw.githubusercontent.com/Kylne700/seance-v2/main/ledger.json  http 404  (waits for the push: not up yet)
-FAIL link https://github.com/Kylne700/seance-v2/blob/main/template/src/lib.rs  http 404  (waits for the push: not up yet)
-FAIL link https://github.com/Kylne700/seance-v2/actions/workflows/pages.yml/badge.svg  http 404  (waits for the push: not up yet)
-FAIL link https://kylne700.github.io/seance-v2/  http 404  (waits for the push: not up yet)
-FAIL link https://kylne700.github.io/seance-v2/media/ask-for-it-anyway.png  http 404  (waits for the push: not up yet)
-FAIL link https://kylne700.github.io/seance-v2/media/ghost-log-after-summon.png  http 404  (waits for the push: not up yet)
-FAIL link https://kylne700.github.io/seance-v2/media/saved-file-0-requests.png  http 404  (waits for the push: not up yet)
-RESULT: FAIL (7), of which 7 wait for the pushed repository and its Pages site
+ok   link https://raw.githubusercontent.com/Kylne700/seance-v2/main/ledger.json  http 200  (waits for the push: it is up)
+ok   link https://github.com/Kylne700/seance-v2/blob/main/template/src/lib.rs  http 200  (waits for the push: it is up)
+ok   link https://github.com/Kylne700/seance-v2/actions/workflows/pages.yml/badge.svg  http 200  (waits for the push: it is up)
+ok   link https://kylne700.github.io/seance-v2/  http 200  (waits for the push: it is up)
+ok   link https://kylne700.github.io/seance-v2/media/ask-for-it-anyway.png  http 200  (waits for the push: it is up)
+ok   link https://kylne700.github.io/seance-v2/media/ghost-log-after-summon.png  http 200  (waits for the push: it is up)
+ok   link https://kylne700.github.io/seance-v2/media/saved-file-0-requests.png  http 200  (waits for the push: it is up)
+RESULT: PASS
