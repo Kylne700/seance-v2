@@ -275,9 +275,14 @@ describe('the Revenant: the simulation reads demo payments only', () => {
 
 describe('the new modules ask nobody', () => {
   it('use no network, storage or dynamic import', () => {
-    for (const f of ['doppel', 'revenant']) {
+    for (const f of ['doppel', 'revenant', 'later']) {
       const src = readFileSync(new URL(`../src/${f}.ts`, import.meta.url), 'utf8')
       expect(src, f).not.toMatch(/\bfetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon|EventSource|\bimport\s*\(|IndexerClient|localStorage|sessionStorage|indexedDB|document\.cookie/)
     }
+  })
+
+  it('the drawing makes no link, button, field, table or inline style (the page keeps its Tab order and its CSP)', () => {
+    const src = readFileSync(new URL('../src/later.ts', import.meta.url), 'utf8')
+    expect(src).not.toMatch(/h\('(a|button|input|select|textarea|details|summary|table|dl|dt|dd)'|tabindex|innerHTML|\bstyle\s*:|'style'/)
   })
 })
