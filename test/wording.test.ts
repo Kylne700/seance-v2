@@ -11,7 +11,7 @@ const files = ['README.md', 'index.html', ...readdirSync(new URL('src/', root)).
 const FORBIDDEN: [string, RegExp][] = [
   ['quantum-proof', /quantum[- ]proof/i],
   ['quantum-safe', /quantum[- ]safe/i],
-  ['quantum-secure', /quantum[- ](secure|resistant)/i],
+  ['quantum-secure', /quantum[- ]secure/i], // "quantum-resistant" is not here: research/80 line 191 uses it for NIST's ML-KEM standard, plainly named
   ['post-quantum private', /post-quantum private/i],
   ['untraceable', /untraceable/i],
   ['anonymous', /anonymous/i],
@@ -60,6 +60,7 @@ describe('B1: the words the page does not use', () => {
       'It cannot spend (by the code; not tried).',
       'Notes not yet spent could be spent.',
       'This page does not say when or whether one will exist.',
+      "ML-KEM is NIST's quantum-resistant key-establishment standard.",
       'The first indexer answers only if you press the button.',
       'Epoch 2026-10-20 is the first one it looked at.',
     ])
