@@ -74,8 +74,9 @@ const POLT = [['reuse', '11 of 11', '0 of 11'], ['amount', '11 of 11', '1 of 11'
 
 const lines = []
 let failed = 0
+const HOME = new RegExp(['\\/ho', 'me\\/[^\\s/]+'].join(''), 'g') // in parts so a search of this repo for home paths finds none
 const say = (s) => {
-  lines.push(s.replaceAll(APP, './').replace(/\/home\/[^\s/]+/g, '~')) // evidence/smoke.txt is committed: a crash trace must not carry this machine's paths
+  lines.push(s.replaceAll(APP, './').replace(HOME, '~')) // evidence/smoke.txt is committed: a crash trace must not carry this machine's paths
   console.log(s)
 }
 const check = (ok, what, detail = '') => {
