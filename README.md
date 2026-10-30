@@ -25,7 +25,7 @@ Three ghosts read one transaction; a fourth studies the demo payments as a set:
 
 - **The Stranger** holds no key. It shows what everyone can see: the id, the outcome, the fee, the sealed notes as real bytes, each with a plain caption. Under the cards, **What still leaks** lists what stays public, with this transaction's real values.
 - **The Medium** holds a recipient's view key and listens inside the page. With the right key it hears the amount and the memo. With a wrong key it hears nothing: "The spirits are quiet."
-- **The Auditor** holds the audit key of a token. It counts the amount of every sealed note of that token. It cannot read a memo, and a view key cannot spend. It works on the four payments in our own demo token (SEANCE), which was made with an audit key. On any other transaction it says there is nothing to count.
+- **The Auditor** holds the audit key of a token. It counts the amount of every sealed note of that token. It cannot read a memo. By the code it cannot spend if it is a fresh key used for nothing else (not tried). It works on the four payments in our own demo token (SEANCE), which was made with an audit key. On any other transaction it says there is nothing to count.
 - **The Poltergeist** holds no key. It reads only public data and tries four chain-analysis tricks (address reuse, amount matching, timing, fee fingerprint), plus the spend graph as an extra, on the 11 TARI demo payments and on a **synthetic** transparent ledger of the same payments. Some tricks still work on Tari, and the page says which.
 
 Made for the Tari October Build Contest, "Spooky Secrets". Testnet only. Nothing here touches mainnet.
@@ -230,7 +230,7 @@ Fifteen real Esmeralda transactions, sent from a throwaway testnet account. The 
 
 ## The demo keys
 
-These are the view secrets of the demo identities and of the demo token's audit key. They are published on purpose, for testnet only. Bob's and Carol's read the demo payments made to them (in TARI and in SEANCE) and nothing else. Eve's reads nothing at all. The audit key counts the amounts of the SEANCE demo payments and nothing else. A view key cannot spend. **Never reuse these keys for anything real.**
+These are the view secrets of the demo identities and of the demo token's audit key. They are published on purpose, for testnet only. Bob's and Carol's read the demo payments made to them (in TARI and in SEANCE) and nothing else. Eve's reads nothing at all. The audit key counts the amounts of the SEANCE demo payments and nothing else. By the code a view key cannot spend (not tried). **Never reuse these keys for anything real.**
 
 | Who | View secret |
 |---|---|
