@@ -22,6 +22,7 @@ const trace = (kex: string | null, eol = '\n'): string =>
 const reply = (body: string, status = 200) => vi.fn(async (_url: string | URL | Request, _init?: RequestInit) => new Response(body, { status }))
 const NO_ANSWER = 'The check got no answer, so this page cannot say which key exchange this connection used.'
 const UNKNOWN = 'Cloudflare did not say which key exchange this connection used.'
+const OTHER = 'Cloudflare named a key exchange this page does not know, so it cannot say whether it is post-quantum.'
 
 describe('parseKex', () => {
   it('reads the kex line and nothing else', () => {
@@ -50,10 +51,16 @@ describe('kexMessage', () => {
     expect(kexMessage('X25519')).toBe('Your browser used a classical key exchange (X25519) for this connection.')
     expect(kexMessage('P-256')).toBe('Your browser used a classical key exchange (P-256) for this connection.')
   })
-  it.each([null, '', 'Kyber512', 'X25519Kyber768Draft00', 'x25519mlkem768', 'X25519MLKEM768 ', '<b>X25519</b>', 'a'.repeat(500)])('says it was not told, never "classical", for %j', (kex) => {
+  it.each([null, ''])('says it was not told, never "classical", for %j', (kex) => {
     const m = kexMessage(kex)
     expect(m).toBe(UNKNOWN)
     expect(m).not.toMatch(/classical|ML-KEM|post-quantum/i)
+  })
+  it.each(['Kyber512', 'X25519Kyber768Draft00', 'x25519mlkem768', 'X25519MLKEM768 ', '<b>X25519</b>', 'a'.repeat(500)])('says it does not know the value, never "classical" or "did not say", and never copies it, for %j', (kex) => {
+    const m = kexMessage(kex)
+    expect(m).toBe(OTHER)
+    expect(m).not.toMatch(/classical|ML-KEM|did not say/i)
+    expect(m).not.toContain(kex)
   })
 })
 
@@ -74,7 +81,7 @@ describe('checkConnection', () => {
     ['X25519MLKEM768', /used X25519MLKEM768/],
     ['X25519', /classical key exchange \(X25519\)/],
     [null, /^Cloudflare did not say/],
-    ['junk;value<>', /^Cloudflare did not say/],
+    ['junk;value<>', /^Cloudflare named a key exchange this page does not know/],
   ])('shows a sentence for kex=%s and never the IP address or place in the body', async (kex, shown) => {
     const text = await checkConnection(reply(trace(kex)))
     expect(text).toMatch(shown)

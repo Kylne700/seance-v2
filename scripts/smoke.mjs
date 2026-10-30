@@ -1607,6 +1607,7 @@ const KEX_HYBRID_START = "Your browser's connection to the indexer's front door 
 const KEX_HYBRID_END = 'This covers only that connection. It does not change what the chain makes public, and it does not cover the link from Cloudflare to the indexer.'
 const KEX_CLASSICAL = (group) => `Your browser used a classical key exchange (${group}) for this connection.`
 const KEX_UNKNOWN = 'Cloudflare did not say which key exchange this connection used.'
+const KEX_OTHER = 'Cloudflare named a key exchange this page does not know, so it cannot say whether it is post-quantum.'
 
 // The indexer as the lookups see it: the two listed transactions, a 404 for any id, and Cloudflare's trace (`state.gate`, when set, holds the answer back).
 function mockIndexer() {
@@ -1707,7 +1708,7 @@ async function connectionRun(browser, w) {
   // the other answers Cloudflare can give, one press each
   const bad = []
   let n = 1
-  for (const [kex, want] of [['X25519', KEX_CLASSICAL('X25519')], ['P-256', KEX_CLASSICAL('P-256')], [null, KEX_UNKNOWN], ['junk;value<>', KEX_UNKNOWN], ['X25519Kyber768Draft00', KEX_UNKNOWN]]) {
+  for (const [kex, want] of [['X25519', KEX_CLASSICAL('X25519')], ['P-256', KEX_CLASSICAL('P-256')], [null, KEX_UNKNOWN], ['junk;value<>', KEX_OTHER], ['X25519Kyber768Draft00', KEX_OTHER]]) {
     m.state.kex = kex
     await page.click('#check-conn')
     await idle()
@@ -1721,7 +1722,7 @@ async function connectionRun(browser, w) {
     if (shown !== want) bad.push(`kex ${kex === null ? 'missing' : kex.slice(0, 12)}: ${shown.slice(0, 50)}`)
     if (m.state.traces !== n || s.netRows.length !== rows0 + n || namedInHead(s.netHead) !== k0) bad.push(`after press ${n}: ${m.state.traces} requests, ${s.netRows.length - rows0} new rows, K ${namedInHead(s.netHead)}`)
   }
-  check(bad.length === 0, `${tag}: X25519 and P-256 are called classical with their name; a missing line, a junk value and another hybrid's name are "did not say" (never "classical"); each press adds one request and one row, and K stays ${k0}`, bad.join(' | '))
+  check(bad.length === 0, `${tag}: X25519 and P-256 are called classical with their name; a missing line is "did not say"; a junk value and another hybrid's name are "does not know" (never "classical", never copied); each press adds one request and one row, and K stays ${k0}`, bad.join(' | '))
   check(traces().length === n && traces().every((r) => r.method === 'GET' && r.type === 'fetch') && !traces().some((r) => 'cookie' in JSON.parse(r.headers)), `${tag}: ${n} presses made ${n} requests, each a plain GET (no preflight, no cookie)`, traces().map((r) => `${r.method} ${r.type}`).join(', '))
 
   // the fixture's IP address and place are in none of the places a page could keep them

@@ -15,6 +15,7 @@ const CLASSICAL = new Set(['X25519', 'P-256'])
 const HYBRID_TEXT =
   "Your browser's connection to the indexer's front door (Cloudflare) used X25519MLKEM768: X25519 combined with ML-KEM-768. ML-KEM is NIST's quantum-resistant key-establishment standard, so a recording of this connection is meant to stay unreadable even to a future quantum computer ('store now, decrypt later'). This covers only that connection. It does not change what the chain makes public, and it does not cover the link from Cloudflare to the indexer."
 const UNKNOWN_TEXT = 'Cloudflare did not say which key exchange this connection used.'
+const OTHER_TEXT = 'Cloudflare named a key exchange this page does not know, so it cannot say whether it is post-quantum.'
 const NO_ANSWER_TEXT = 'The check got no answer, so this page cannot say which key exchange this connection used.'
 
 /** The value of the `kex` line, or null when there is none. Every other line of the body is ignored. */
@@ -26,8 +27,9 @@ export function parseKex(body: string): string | null {
 /** The sentence to show. It is built from fixed text: a value Cloudflare sent is compared, never copied onto the page. */
 export function kexMessage(kex: string | null): string {
   if (kex === HYBRID) return HYBRID_TEXT
-  if (kex !== null && CLASSICAL.has(kex)) return `Your browser used a classical key exchange (${kex}) for this connection.`
-  return UNKNOWN_TEXT
+  if (kex === null || kex === '') return UNKNOWN_TEXT
+  if (CLASSICAL.has(kex)) return `Your browser used a classical key exchange (${kex}) for this connection.`
+  return OTHER_TEXT
 }
 
 /**
