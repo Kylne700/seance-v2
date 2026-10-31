@@ -1,0 +1,79 @@
+{
+ "voice": "Deepgram Aura 1 (angus) via Cloudflare Workers AI",
+ "card": [
+  "A screen recording of the live page, filmed 2026-10-30.",
+  "Synthetic voice: Deepgram Aura 1 (angus) via Cloudflare Workers AI."
+ ],
+ "lines": [
+  {
+   "id": "l01",
+   "text": "This saved copy of a real payment from the Tari test network hides its amount, memo and receiver from a stranger who has no key.",
+   "burned": "This saved copy of a real Tari testnet payment hides its amount, memo and receiver from a stranger with no key."
+  },
+  {
+   "id": "l02",
+   "text": "The Medium's view key opens one sealed note, amount and memo, inside this page. The key was not sent anywhere.",
+   "burned": "The Medium's view key opens one sealed note, amount and memo, inside this page. The key was not sent anywhere."
+  },
+  {
+   "id": "l03",
+   "text": "The Auditor holds the token's audit key. It counts both amounts, but the memo stays shut to it.",
+   "burned": "The Auditor holds the token's audit key. It counts both amounts, but the memo stays shut to it."
+  },
+  {
+   "id": "l04",
+   "text": "The Poltergeist has no key. On these 11 demo payments, address reuse ties none and amount matching finds one.",
+   "burned": "The Poltergeist has no key. On these 11 demo payments, address reuse ties none and amount matching finds one."
+  },
+  {
+   "id": "l05",
+   "text": "Timing, the fee fingerprint and the spend graph still tie all 11 payments.",
+   "burned": "Timing, the fee fingerprint and the spend graph still tie all 11 payments."
+  },
+  {
+   "id": "l06",
+   "text": "Anyone can still read the token, spent notes, times, fee, signing keys and more. The locked message's size shows if a memo is inside.",
+   "burned": "Anyone can still read the token, spent notes, times, fee, signing keys and more. The locked message's size shows if a memo is inside."
+  },
+  {
+   "id": "l07",
+   "text": "Paste the id of a recent transaction. The page finds it in the indexer's latest 40, so the indexer was not asked for this id.",
+   "burned": "Paste the id of a recent transaction. The page finds it in the indexer's latest 40, so the indexer was not asked for this id."
+  },
+  {
+   "id": "l08",
+   "text": "This id is not in that list, so the page asks for it only if you press Ask for it anyway.",
+   "burned": "This id is not in that list, so the page asks for it only if you press Ask for it anyway."
+  },
+  {
+   "id": "l09",
+   "text": "Check my connection adds one more request to the list. The link to Cloudflare, which fronts the indexer, used a hybrid post-quantum key exchange. It covers that link only.",
+   "burned": "Check my connection adds one request to the log. The link to Cloudflare, which fronts the indexer, used a hybrid post-quantum key exchange; it covers that link only."
+  },
+  {
+   "id": "l10",
+   "text": "The indexer still sees your IP address and the time.",
+   "burned": "The indexer still sees your IP address and the time."
+  },
+  {
+   "id": "l11",
+   "text": "With the network cut, a saved file still opens and the Medium reads it. The log says 0 requests since the file opened.",
+   "burned": "With the network cut, a saved file still opens and the Medium reads it. The log says 0 requests since the file opened."
+  },
+  {
+   "id": "l12",
+   "text": "The Doppelganger clones a key. A ladder shows what each key opens and whether it can spend funds.",
+   "burned": "The Doppelganger copies a key. A ladder shows what each key opens and whether it can spend."
+  },
+  {
+   "id": "l13",
+   "text": "The Revenant: harvest now, decrypt later. Three tiers say what a computer that can solve discrete logarithms would read.",
+   "burned": "The Revenant: harvest now, decrypt later. Three tiers say what a computer that can solve discrete logarithms would read."
+  },
+  {
+   "id": "l14",
+   "text": "The Simulation box uses the demo keys we published in place of that computer, and says so.",
+   "burned": "The Simulation box uses the demo keys we published in place of that computer, and says so."
+  }
+ ]
+}

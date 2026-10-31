@@ -1,4 +1,4 @@
-// Maintainer script: films the LIVE page and writes public/media/seance-v2-demo.mp4, a silent screen recording of version 2 (no audio track, no voice, no model).
+// Maintainer script: films the LIVE page and writes the SILENT cut of the version 2 screen recording (no audio track, no voice, no model) to SILENT_OUT (default: seance-v2-demo-silent.mp4 in the temp directory). It never writes public/media/seance-v2-demo.mp4: that file is the narrated video, made from this silent cut by scripts/narrate-v2-demo.mjs.
 //   node scripts/make-v2-demo.mjs
 // Needs headless Chromium (CHROMIUM=/path overrides /usr/bin/chromium) and ffmpeg with libx264 and drawtext. LIVE_URL, WORK (where the frames and notes are kept; default a
 // temp directory, removed at the end only when WORK is not set) and FONT (the caption font) can be set. It uses the real indexer, so a take can fail when the testnet is quiet
@@ -13,7 +13,7 @@
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import puppeteer from 'puppeteer-core'
 import { INDEXER_URL } from '../src/config.ts'
@@ -29,7 +29,7 @@ const INDEXER_HOST = new URL(INDEXER_URL).host
 const KEEP_WORK = Boolean(process.env.WORK)
 const WORK = process.env.WORK ?? mkdtempSync(join(tmpdir(), 'seance-v2-video-'))
 const FRAMES = join(WORK, 'frames')
-const OUT = fileURLToPath(new URL('../public/media/seance-v2-demo.mp4', import.meta.url))
+const OUT = resolve(process.env.SILENT_OUT ?? join(tmpdir(), 'seance-v2-demo-silent.mp4')) // the silent cut; the narrated public/media/seance-v2-demo.mp4 is made from it
 const EXAMPLE = fileURLToPath(new URL('../examples/saved-transaction.json', import.meta.url)) // our own demo transaction
 const FONT = process.env.FONT ?? '/usr/share/fonts/opentype/inter/Inter-Medium.otf'
 const W = 1280, H = 720, BAND = 80, PAGE_H = H - BAND // the page above, a caption band below
@@ -451,14 +451,14 @@ try {
     `[1:v]fps=${FPS},scale=${W}:${H}:flags=lanczos+accurate_rnd:out_range=tv:out_color_matrix=bt709,format=yuv420p,setsar=1,settb=1/${FPS}[c]`,
     `[m][c]xfade=transition=fade:duration=${FADE_S}:offset=${(mainS - FADE_S).toFixed(3)},setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv[v]`,
   ].join(';')
-  mkdirSync(fileURLToPath(new URL('../public/media/', import.meta.url)), { recursive: true })
+  mkdirSync(dirname(OUT), { recursive: true })
   const ff = spawnSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', join(WORK, 'frames.ffconcat'), '-loop', '1', '-framerate', String(FPS), '-t', String(END_S + FADE_S), '-i', join(WORK, 'card.png'),
     '-filter_complex', graph, '-map', '[v]', '-an', '-c:v', 'libx264', '-preset', 'slow', '-crf', String(process.env.CRF ?? 26), '-pix_fmt', 'yuv420p', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv', '-r', String(FPS), '-movflags', '+faststart', OUT], { stdio: 'inherit' })
   must(ff.status === 0, 'ffmpeg failed')
 
   writeFileSync(join(WORK, 'captions.json'), JSON.stringify({ t0, mainS, captions: caps.map((c) => ({ scene: c.scene, text: c.text, from: Number(rel(c.from)), to: Number(rel(c.to)) })) }, null, 1) + '\n')
   writeFileSync(join(WORK, 'all-text.txt'), texts.join('\n---\n') + '\n')
-  console.log(`wrote ${OUT.replace(/^.*\/public\//, 'public/')}`)
+  console.log(`wrote the silent cut ${OUT}`)
 } finally {
   for (const done of cleanup.reverse()) await Promise.resolve(done()).catch(() => {})
   if (!KEEP_WORK) rmSync(WORK, { recursive: true, force: true })
