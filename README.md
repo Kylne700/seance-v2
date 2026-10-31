@@ -19,6 +19,8 @@ Seance reads real Tari Esmeralda transactions in your browser and shows, side by
 3. Press **Hold the seance** on another prepared transaction, then scroll to **The Poltergeist**: a ghost with no key that tries four chain-analysis tricks on our 11 TARI demo payments and says which of the tricks still work on them.
 4. Check rather than trust. Beside each shown transaction are proof links: a live answer links to the explorer, a saved copy links to its receipt on the second public indexer, to `ledger.json` and to its receipt on the first indexer. The Auditor card has a closed section with the 34-line Rust template that made the token, with a link to the token on the explorer, whose page lists the token's View key (the audit key's public half). `npm test` runs offline.
 
+MIT licensed: the Tari team is welcome to host or fork it.
+
 **Limits, up front.** Testnet only: nothing here touches mainnet. The page trusts the indexer's answer and does not check it against the chain. The Auditor reads only the notes of our own demo token. The demo transactions come from one throwaway wallet, so the Poltergeist's numbers describe that wallet. The cryptography is the official SDK, which we did not audit. What the indexer still learns from a visit is in [Private by design](#private-by-design); more in the [threat model](#threat-model).
 
 Three ghosts read one transaction; a fourth studies the demo payments as a set:
@@ -249,6 +251,8 @@ It does not call these, on purpose:
 **What was run, and what was not.** On 2026-10-30 a send through this page (build 468323d) with a real wallet, Sapient 0.6.14 on Esmeralda, was made once. The wallet's approval screen showed the Private fee and enforced it. The payment was found in the list on look 1 of 9, 25 s after the approval, under the commitment the wallet returned, and Bob's key read its amount and memo. A rejected request gave the page's refusal message. The code of this page is also tested against a stand-in wallet (`npm test`, and the "wallet" scenarios of `npm run smoke`). Not run with a real wallet, so NOT VERIFIED: the wallet's `submitted` answer, a lost connection, too little funds, the page's message after 9 looks and "Look again", the 300 s wait, and memos of 36 to 40 characters.
 
 **The evidence of that send.** Times, the page's requests and the fee line are in [evidence/real-send-2026-10-30.md](evidence/real-send-2026-10-30.md).
+
+**A short recording of a send.** A [narrated screen recording of 34 seconds](https://kylne700.github.io/seance-v2/media/seance-v2-wallet.mp4) of one real send on Esmeralda, filmed on 2026-10-31 with Sapient 0.6.14: the wallet's approval screen with the Private fee, the page finding the payment, then what Bob's key opens and what a stranger sees. A wait of about 17 seconds is cut, and the cut is marked on screen; the page's own scroll at "Found it." was held back and the two panels were scrolled into view by the recording script, so that long ids stay out of the frame. The voice is synthetic (Deepgram Aura 1, voice angus, run through Cloudflare Workers AI) and reads the burned-in captions.
 
 ## Checks
 
